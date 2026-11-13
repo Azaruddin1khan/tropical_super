@@ -48,7 +48,8 @@ export default function DashboardPage() {
 
   return (
     <SuperAdminLayout>
-      {/* Top Banner: Tropical Amber Brand Theme */}
+      <div className="space-y-6">
+        {/* Top Banner: Tropical Amber Brand Theme */}
       <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-15 pointer-events-none flex items-center justify-end pr-6">
           <Flame className="w-64 h-64 text-white" />
@@ -296,6 +297,7 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
       </div>
     </SuperAdminLayout>
   );

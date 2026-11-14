@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function Label({
@@ -104,24 +105,29 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="w-full">
         {label && <Label required={required}>{label}</Label>}
-        <select
-          ref={ref}
-          required={required}
-          className={cn(
-            'flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 disabled:cursor-not-allowed disabled:opacity-50',
-            error && 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20',
-            className
-          )}
-          {...props}
-        >
-          {options
-            ? options.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))
-            : children}
-        </select>
+        <div className="relative w-full">
+          <select
+            ref={ref}
+            required={required}
+            className={cn(
+              'flex h-10 w-full rounded-xl border border-slate-200 bg-white pl-3.5 pr-10 py-2 text-sm text-slate-900 transition-colors appearance-none cursor-pointer focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 disabled:cursor-not-allowed disabled:opacity-50',
+              error && 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20',
+              className
+            )}
+            {...props}
+          >
+            {options
+              ? options.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))
+              : children}
+          </select>
+          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 flex items-center">
+            <ChevronDown className="w-4 h-4" />
+          </div>
+        </div>
         {error && <p className="mt-1 text-xs text-rose-600 font-medium">{error}</p>}
       </div>
     );

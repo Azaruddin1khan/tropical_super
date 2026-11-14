@@ -147,30 +147,23 @@ function PermissionsContent() {
               <button
                 type="button"
                 onClick={() => applyPreset('front_desk')}
-                className="px-2.5 py-1 text-xs font-semibold rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+                className="px-2.5 py-1 text-xs font-semibold rounded-md bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 transition-colors shadow-2xs"
               >
-                Front Desk
+                Front Counter Clerk
               </button>
               <button
                 type="button"
                 onClick={() => applyPreset('kitchen_lead')}
-                className="px-2.5 py-1 text-xs font-semibold rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+                className="px-2.5 py-1 text-xs font-semibold rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 transition-colors shadow-2xs"
               >
-                Kitchen Lead
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPreset('operations_manager')}
-                className="px-2.5 py-1 text-xs font-semibold rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
-              >
-                Operations Manager
+                Kitchen & Dispatch Lead
               </button>
               <button
                 type="button"
                 onClick={() => applyPreset('full')}
-                className="px-2.5 py-1 text-xs font-semibold rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 transition-colors shadow-2xs"
+                className="px-2.5 py-1 text-xs font-semibold rounded-md bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100 transition-colors shadow-2xs"
               >
-                Grant All
+                Full Access
               </button>
             </div>
           </div>

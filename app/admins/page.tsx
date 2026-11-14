@@ -16,6 +16,11 @@ import {
   XCircle,
   AlertCircle,
   Search,
+  Eye,
+  EyeOff,
+  Key,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { SuperAdminLayout } from '@/components/layout/super-admin-layout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -40,10 +45,35 @@ export default function AdminsPage() {
     name: '',
     email: '',
     phone: '',
+    password: '',
     roleTitle: 'Kitchen Supervisor',
     preset: 'kitchen_lead',
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+
+  // Edit modal states
+  const [editPassword, setEditPassword] = useState('');
+  const [showEditPassword, setShowEditPassword] = useState(false);
+  const [editPasswordError, setEditPasswordError] = useState('');
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+    let pass = 'TG#';
+    for (let i = 0; i < 7; i++) {
+      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return pass;
+  };
+
+  const copyToClipboard = (text: string, keyName: string) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedKey(keyName);
+      setTimeout(() => setCopiedKey(null), 2000);
+    }
+  };
 
   const filteredAdmins = admins.filter((admin) => {
     if (!searchQuery.trim()) return true;
@@ -61,6 +91,11 @@ export default function AdminsPage() {
     if (!formData.name.trim()) errors.name = 'Admin full name is required';
     if (!formData.email.trim()) errors.email = 'Admin email is required';
     if (!formData.phone.trim()) errors.phone = 'Phone number is required';
+    if (!formData.password) {
+      errors.password = 'Initial sign-in password is required';
+    } else if (formData.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
 
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
@@ -73,6 +108,7 @@ export default function AdminsPage() {
       name: formData.name.trim(),
       email: formData.email.trim(),
       phone: formData.phone.trim(),
+      password: formData.password.trim(),
       roleTitle: formData.roleTitle.trim(),
       status: 'active',
       lastActive: new Date().toISOString(),
@@ -84,6 +120,7 @@ export default function AdminsPage() {
       name: '',
       email: '',
       phone: '',
+      password: '',
       roleTitle: 'Kitchen Supervisor',
       preset: 'kitchen_lead',
     });
@@ -95,8 +132,19 @@ export default function AdminsPage() {
     e.preventDefault();
     if (!editingAdmin) return;
 
-    editAdmin(editingAdmin);
+    if (editPassword.trim()) {
+      if (editPassword.length < 6) {
+        setEditPasswordError('New password must be at least 6 characters');
+        return;
+      }
+      editAdmin({ ...editingAdmin, password: editPassword.trim() });
+    } else {
+      editAdmin(editingAdmin);
+    }
+
     setEditingAdmin(null);
+    setEditPassword('');
+    setEditPasswordError('');
   };
 
   return (
@@ -283,6 +331,76 @@ export default function AdminsPage() {
             />
           </div>
 
+          {/* Sign-In Password Field with Generator & Toggle */}
+          <div className="p-3.5 bg-amber-50/50 border border-amber-200/80 rounded-xl space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
+                <Key className="w-3.5 h-3.5 text-amber-600" />
+                <span>Temporary Sign-In Password *</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  const newPass = generateRandomPassword();
+                  setFormData({ ...formData, password: newPass });
+                  if (formErrors.password) setFormErrors({ ...formErrors, password: '' });
+                }}
+                className="text-xs font-bold text-amber-700 hover:text-amber-800 bg-white hover:bg-amber-100/70 border border-amber-300 px-2.5 py-1 rounded-lg shadow-2xs transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <span>🎲 Generate Secure</span>
+              </button>
+            </div>
+
+            <div className="relative">
+              <input
+                type={showCreatePassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={(e) => {
+                  setFormData({ ...formData, password: e.target.value });
+                  if (formErrors.password) setFormErrors({ ...formErrors, password: '' });
+                }}
+                placeholder="e.g. TG#Admin@2026"
+                className="w-full h-10 px-3.5 pr-20 text-sm font-mono bg-white border border-amber-300 rounded-lg text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-slate-400">
+                {formData.password && (
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(formData.password, 'create_pass')}
+                    className="p-1.5 hover:text-slate-800 rounded-md transition-colors"
+                    title="Copy Password"
+                  >
+                    {copiedKey === 'create_pass' ? (
+                      <Check className="w-4 h-4 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowCreatePassword(!showCreatePassword)}
+                  className="p-1.5 hover:text-slate-800 rounded-md transition-colors"
+                  title={showCreatePassword ? 'Hide Password' : 'Show Password'}
+                >
+                  {showCreatePassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {formErrors.password && (
+              <p className="text-xs text-rose-600 font-medium">{formErrors.password}</p>
+            )}
+
+            <p className="text-[11px] text-amber-900/80">
+              Staff will use this password alongside their email to sign into the existing Admin Panel.
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Operational Role Title *"
@@ -354,6 +472,76 @@ export default function AdminsPage() {
               <option value="active">Active (Access Granted)</option>
               <option value="inactive">Inactive (Access Suspended)</option>
             </Select>
+
+            {/* Reset / Change Password Section */}
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Reset / Change Password (Optional)</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newPass = generateRandomPassword();
+                    setEditPassword(newPass);
+                    setEditPasswordError('');
+                  }}
+                  className="text-xs font-bold text-amber-700 hover:text-amber-800 bg-white hover:bg-slate-100 border border-slate-300 px-2.5 py-1 rounded-lg shadow-2xs transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <span>🎲 Generate New</span>
+                </button>
+              </div>
+
+              <div className="relative">
+                <input
+                  type={showEditPassword ? 'text' : 'password'}
+                  value={editPassword}
+                  onChange={(e) => {
+                    setEditPassword(e.target.value);
+                    if (editPasswordError) setEditPasswordError('');
+                  }}
+                  placeholder="Leave blank to keep existing password"
+                  className="w-full h-10 px-3.5 pr-20 text-sm font-mono bg-white border border-slate-300 rounded-lg text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-slate-400">
+                  {editPassword && (
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(editPassword, 'edit_pass')}
+                      className="p-1.5 hover:text-slate-800 rounded-md transition-colors"
+                      title="Copy Password"
+                    >
+                      {copiedKey === 'edit_pass' ? (
+                        <Check className="w-4 h-4 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowEditPassword(!showEditPassword)}
+                    className="p-1.5 hover:text-slate-800 rounded-md transition-colors"
+                    title={showEditPassword ? 'Hide Password' : 'Show Password'}
+                  >
+                    {showEditPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {editPasswordError && (
+                <p className="text-xs text-rose-600 font-medium">{editPasswordError}</p>
+              )}
+
+              <p className="text-[11px] text-slate-500">
+                Only enter a value if you wish to overwrite this staff member&apos;s current login credential.
+              </p>
+            </div>
 
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
               <Button type="button" variant="outline" onClick={() => setEditingAdmin(null)}>

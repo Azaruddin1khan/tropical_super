@@ -80,6 +80,7 @@ export interface AdminAccount {
   name: string;
   email: string;
   phone: string;
+  password?: string;
   roleTitle: string; // e.g. "Kitchen Supervisor", "Front Counter Clerk", "Operations Manager"
   status: 'active' | 'inactive';
   lastActive: string;

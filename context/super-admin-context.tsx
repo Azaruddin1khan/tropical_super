@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import {
   AdminAccount,
   AdminPermissions,
+  CustomRole,
   Order,
   OrderStatus,
   Product,
@@ -16,6 +17,7 @@ import {
 } from '@/types';
 import {
   initialAdminAccounts,
+  initialCustomRoles,
   initialOrders,
   initialProducts,
   initialCategories,
@@ -46,6 +48,12 @@ interface SuperAdminContextType {
   toggleAdminStatus: (adminId: string) => void;
   updateAdminPermissions: (adminId: string, permissions: AdminPermissions) => void;
   deleteAdmin: (adminId: string) => void;
+
+  // Custom Roles & Presets
+  roles: CustomRole[];
+  addRole: (role: Omit<CustomRole, 'id' | 'createdAt'>) => CustomRole;
+  editRole: (role: CustomRole) => void;
+  deleteRole: (roleId: string) => void;
 
   // Orders Management (Module 02)
   orders: Order[];
@@ -98,6 +106,7 @@ const SuperAdminContext = createContext<SuperAdminContextType | undefined>(undef
 
 export function SuperAdminProvider({ children }: { children: React.ReactNode }) {
   const [admins, setAdmins] = useState<AdminAccount[]>(initialAdminAccounts);
+  const [roles, setRoles] = useState<CustomRole[]>(initialCustomRoles);
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
@@ -274,6 +283,56 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
       });
       showToast('Admin Deleted', `${target.name} account was removed.`, 'info');
     }
+  };
+
+  // ==========================================
+  // OPERATIONAL ROLES MANAGEMENT
+  // ==========================================
+  const addRole = (roleData: Omit<CustomRole, 'id' | 'createdAt'>): CustomRole => {
+    const newRole: CustomRole = {
+      ...roleData,
+      id: `role-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+    setRoles((prev) => [...prev, newRole]);
+    addActivityLog({
+      adminId: 'super-admin-01',
+      adminName: 'Super Administrator',
+      adminRole: 'Master Authority',
+      actionType: 'role_created',
+      description: `Created new Operational Role "${newRole.name}".`,
+      targetEntity: `Role: ${newRole.name}`,
+    });
+    showToast('Role Created', `Operational Role "${newRole.name}" created successfully.`, 'success');
+    return newRole;
+  };
+
+  const editRole = (updatedRole: CustomRole) => {
+    setRoles((prev) => prev.map((r) => (r.id === updatedRole.id ? updatedRole : r)));
+    addActivityLog({
+      adminId: 'super-admin-01',
+      adminName: 'Super Administrator',
+      adminRole: 'Master Authority',
+      actionType: 'role_updated',
+      description: `Updated permissions for Role "${updatedRole.name}".`,
+      targetEntity: `Role: ${updatedRole.name}`,
+    });
+    showToast('Role Updated', `Role "${updatedRole.name}" saved.`, 'info');
+  };
+
+  const deleteRole = (roleId: string) => {
+    const role = roles.find((r) => r.id === roleId);
+    if (!role) return;
+    setRoles((prev) => prev.filter((r) => r.id !== roleId));
+    addActivityLog({
+      adminId: 'super-admin-01',
+      adminName: 'Super Administrator',
+      adminRole: 'Master Authority',
+      actionType: 'role_deleted',
+      description: `Deleted Operational Role "${role.name}".`,
+      targetEntity: `Role: ${role.name}`,
+    });
+    showToast('Role Deleted', `Role "${role.name}" removed.`, 'error');
   };
 
   // ==========================================
@@ -579,6 +638,11 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
         toggleAdminStatus,
         updateAdminPermissions,
         deleteAdmin,
+
+        roles,
+        addRole,
+        editRole,
+        deleteRole,
 
         orders,
         updateOrderStatus,

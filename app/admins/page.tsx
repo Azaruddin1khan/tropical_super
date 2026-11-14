@@ -21,33 +21,53 @@ import {
   Key,
   Copy,
   Check,
+  Users,
+  Sparkles,
+  Layers,
 } from 'lucide-react';
 import { SuperAdminLayout } from '@/components/layout/super-admin-layout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input, Select } from '@/components/ui/input';
+import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
 import { Badge } from '@/components/ui/badge';
 import { useSuperAdmin } from '@/context/super-admin-context';
-import { AdminAccount } from '@/types';
-import { formatDate, PRESET_TEMPLATES } from '@/lib/utils';
+import { AdminAccount, AdminPermissions, CustomRole } from '@/types';
+import { formatDate, FULL_PERMISSIONS_TEMPLATE } from '@/lib/utils';
 
 export default function AdminsPage() {
-  const { admins, addAdmin, editAdmin, toggleAdminStatus, deleteAdmin } = useSuperAdmin();
+  const { admins, addAdmin, editAdmin, toggleAdminStatus, deleteAdmin, roles, addRole, deleteRole } = useSuperAdmin();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminAccount | null>(null);
   const [deletingAdminId, setDeletingAdminId] = useState<string | null>(null);
 
-  // Form states
+  // Operational Roles Management Modals
+  const [isManageRolesModalOpen, setIsManageRolesModalOpen] = useState(false);
+  const [isCreateRoleModalOpen, setIsCreateRoleModalOpen] = useState(false);
+
+  // New Role Form State
+  const [newRoleData, setNewRoleData] = useState({
+    name: '',
+    description: '',
+    badgeColor: 'amber' as 'amber' | 'emerald' | 'sky' | 'purple' | 'slate',
+    canOrders: true,
+    canProducts: false,
+    canCategories: false,
+    canPayments: false,
+    canDeliveryStaff: false,
+    canCustomers: false,
+  });
+  const [newRoleError, setNewRoleError] = useState('');
+
+  // Admin Account Form states
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     password: '',
-    roleTitle: 'Kitchen Supervisor',
-    preset: 'kitchen_lead',
+    roleId: '',
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [showCreatePassword, setShowCreatePassword] = useState(false);
@@ -85,6 +105,19 @@ export default function AdminsPage() {
     );
   });
 
+  const handleOpenAddModal = () => {
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      password: '',
+      roleId: roles[0]?.id || '',
+    });
+    setFormErrors({});
+    setShowCreatePassword(false);
+    setIsAddModalOpen(true);
+  };
+
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const errors: Record<string, string> = {};
@@ -102,17 +135,18 @@ export default function AdminsPage() {
       return;
     }
 
-    const selectedPreset = PRESET_TEMPLATES[formData.preset] || PRESET_TEMPLATES.kitchen_lead;
+    const selectedRole = roles.find((r) => r.id === formData.roleId) || roles[0];
 
     addAdmin({
       name: formData.name.trim(),
       email: formData.email.trim(),
       phone: formData.phone.trim(),
       password: formData.password.trim(),
-      roleTitle: formData.roleTitle.trim(),
+      roleId: selectedRole?.id,
+      roleTitle: selectedRole?.name || 'Kitchen Supervisor',
       status: 'active',
       lastActive: new Date().toISOString(),
-      permissions: selectedPreset.permissions,
+      permissions: selectedRole?.permissions || FULL_PERMISSIONS_TEMPLATE,
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     });
 
@@ -121,11 +155,84 @@ export default function AdminsPage() {
       email: '',
       phone: '',
       password: '',
-      roleTitle: 'Kitchen Supervisor',
-      preset: 'kitchen_lead',
+      roleId: roles[0]?.id || '',
     });
     setFormErrors({});
     setIsAddModalOpen(false);
+  };
+
+  const handleCreateRoleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRoleData.name.trim()) {
+      setNewRoleError('Role title is required');
+      return;
+    }
+
+    const permissions: AdminPermissions = {
+      orders: {
+        viewOrders: newRoleData.canOrders,
+        viewOrderDetails: newRoleData.canOrders,
+        updateOrderStatus: newRoleData.canOrders,
+        assignDeliveryStaff: newRoleData.canOrders,
+        cancelOrders: newRoleData.canOrders,
+        printInvoice: newRoleData.canOrders,
+        exportOrders: newRoleData.canOrders,
+      },
+      products: {
+        viewProducts: newRoleData.canProducts,
+        addProducts: newRoleData.canProducts,
+        editProducts: newRoleData.canProducts,
+        deleteProducts: newRoleData.canProducts,
+        updateStockAvailability: newRoleData.canProducts,
+      },
+      categories: {
+        viewCategories: newRoleData.canCategories,
+        addCategories: newRoleData.canCategories,
+        editCategories: newRoleData.canCategories,
+        deleteCategories: newRoleData.canCategories,
+      },
+      payments: {
+        viewPayments: newRoleData.canPayments,
+        viewTransactions: newRoleData.canPayments,
+        markCashReceived: newRoleData.canPayments,
+      },
+      deliveryStaff: {
+        viewStaff: newRoleData.canDeliveryStaff,
+        addStaff: newRoleData.canDeliveryStaff,
+        editStaff: newRoleData.canDeliveryStaff,
+        manageAssignments: newRoleData.canDeliveryStaff,
+      },
+      customers: {
+        viewCustomers: newRoleData.canCustomers,
+        viewCustomerDetails: newRoleData.canCustomers,
+        manageCustomerAccounts: newRoleData.canCustomers,
+      },
+    };
+
+    const createdRole = addRole({
+      name: newRoleData.name.trim(),
+      description: newRoleData.description.trim() || 'Custom operational role defined by Super Admin.',
+      badgeColor: newRoleData.badgeColor,
+      permissions,
+      isSystemDefault: false,
+    });
+
+    // Auto-select this newly created role in the admin form
+    setFormData((prev) => ({ ...prev, roleId: createdRole.id }));
+
+    setNewRoleData({
+      name: '',
+      description: '',
+      badgeColor: 'amber',
+      canOrders: true,
+      canProducts: false,
+      canCategories: false,
+      canPayments: false,
+      canDeliveryStaff: false,
+      canCustomers: false,
+    });
+    setNewRoleError('');
+    setIsCreateRoleModalOpen(false);
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
@@ -150,158 +257,184 @@ export default function AdminsPage() {
   return (
     <SuperAdminLayout>
       <div className="space-y-6">
-        {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Admin Account Management
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Create, activate, deactivate, and govern credentials for staff accessing the existing Admin Panel
-          </p>
+        {/* Page Header with Action Buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Admin Account Management
+            </h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Create, activate, deactivate, and govern credentials for staff accessing the existing Admin Panel
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs bg-amber-100 text-amber-800 font-bold px-3 py-1.5 rounded-full border border-amber-300">
+              {admins.length} Registered Admins
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => setIsManageRolesModalOpen(true)}
+              className="border-slate-300 hover:bg-slate-100 font-bold text-slate-700 shadow-xs"
+            >
+              <KeyRound className="w-4 h-4 mr-1.5 text-amber-600" />
+              Manage Roles ({roles.length})
+            </Button>
+            <Button
+              onClick={handleOpenAddModal}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-sm"
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              Create Admin Account
+            </Button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs bg-amber-100 text-amber-800 font-bold px-3 py-1.5 rounded-full border border-amber-300">
-            {admins.length} Registered Admins
-          </span>
-          <Button
-            onClick={() => setIsAddModalOpen(true)}
-            className="bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-sm"
-          >
-            <Plus className="w-4 h-4 mr-1.5" />
-            Create Admin Account
-          </Button>
+        {/* Info Callout: Relationship to Existing Panel */}
+        <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex items-start gap-3 shadow-xs">
+          <ShieldCheck className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="text-xs text-amber-900 leading-relaxed">
+            <strong>Central Access Control:</strong> The accounts listed below are credentials used by restaurant staff to log into the <strong>Existing Admin Panel</strong>. Super Admin holds sole authority to create custom roles, provision credentials, and assign granular permissions.
+          </div>
         </div>
-      </div>
 
-      {/* Info Callout: Relationship to Existing Panel */}
-      <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex items-start gap-3 shadow-xs">
-        <ShieldCheck className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-        <div className="text-xs text-amber-900 leading-relaxed">
-          <strong>Central Access Control:</strong> The accounts listed below are credentials used by restaurant staff to log into the <strong>Existing Admin Panel</strong>. Super Admin holds sole authority to create accounts, toggle active status, and assign granular permissions.
+        {/* Search & Filter Bar */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search admin by name, role or email..."
+              className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Search & Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search admin by name, role or email..."
-            className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-          />
-        </div>
-      </div>
-
-      {/* Admins Table Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50/80 text-slate-600 text-xs uppercase tracking-wider border-b border-slate-200">
-              <tr>
-                <th className="py-3.5 px-4 font-semibold">Admin Staff Member</th>
-                <th className="py-3.5 px-4 font-semibold">Operational Role</th>
-                <th className="py-3.5 px-4 font-semibold">Contact</th>
-                <th className="py-3.5 px-4 font-semibold">Account Status</th>
-                <th className="py-3.5 px-4 font-semibold">Last Active</th>
-                <th className="py-3.5 px-4 font-semibold text-right">Supervisory Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-                {filteredAdmins.map((admin) => (
-                  <tr key={admin.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center border border-slate-200 text-xs">
-                          {admin.name.slice(0, 2).toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="font-bold text-slate-900 text-xs">{admin.name}</div>
-                          <div className="text-[11px] text-slate-400 font-mono">{admin.id}</div>
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="py-3.5 px-4 font-semibold text-slate-700">
-                      {admin.roleTitle}
-                    </td>
-
-                    <td className="py-3.5 px-4 space-y-0.5 text-slate-600">
-                      <div className="flex items-center gap-1.5 text-[11px]">
-                        <Mail className="w-3 h-3 text-slate-400" />
-                        <span>{admin.email}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[11px]">
-                        <Phone className="w-3 h-3 text-slate-400" />
-                        <span>{admin.phone}</span>
-                      </div>
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      {admin.status === 'active' ? (
-                        <Badge variant="success" className="font-semibold text-[10px]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
-                          Active Access
-                        </Badge>
-                      ) : (
-                        <Badge variant="slate" className="font-semibold text-[10px]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5"></span>
-                          Deactivated
-                        </Badge>
-                      )}
-                    </td>
-
-                    <td className="py-3.5 px-4 text-slate-500 text-[11px]">
-                      {formatDate(admin.lastActive)}
-                    </td>
-
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Link href={`/permissions?adminId=${admin.id}`}>
-                          <Button variant="outline" size="sm" className="text-xs bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300">
-                            <KeyRound className="w-3.5 h-3.5 mr-1 text-amber-600" />
-                            Permissions
-                          </Button>
-                        </Link>
-
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingAdmin(admin)}
-                          title="Edit Admin Information"
-                        >
-                          <Edit2 className="w-3.5 h-3.5 text-slate-600" />
-                        </Button>
-
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleAdminStatus(admin.id)}
-                          title={admin.status === 'active' ? 'Deactivate Access' : 'Activate Access'}
-                          className={admin.status === 'active' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50'}
-                        >
-                          <Power className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
+        {/* Admins Table Card */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-slate-50/80 text-slate-600 text-xs uppercase tracking-wider border-b border-slate-200">
+                <tr>
+                  <th className="py-3.5 px-4 font-semibold">Admin Staff Member</th>
+                  <th className="py-3.5 px-4 font-semibold">Operational Role</th>
+                  <th className="py-3.5 px-4 font-semibold">Contact</th>
+                  <th className="py-3.5 px-4 font-semibold">Account Status</th>
+                  <th className="py-3.5 px-4 font-semibold">Last Active</th>
+                  <th className="py-3.5 px-4 font-semibold text-right">Supervisory Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredAdmins.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                      <AlertCircle className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                      <p className="font-medium text-slate-600">No admin accounts found</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Try adjusting your search criteria</p>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredAdmins.map((admin) => (
+                    <tr key={admin.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center border border-slate-200 text-xs">
+                            {admin.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-900 text-xs">{admin.name}</div>
+                            <div className="text-[11px] text-slate-400 font-mono">{admin.id}</div>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-200">
+                          {admin.roleTitle}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-4 space-y-0.5 text-slate-600">
+                        <div className="flex items-center gap-1.5 text-[11px]">
+                          <Mail className="w-3 h-3 text-slate-400" />
+                          <span>{admin.email}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px]">
+                          <Phone className="w-3 h-3 text-slate-400" />
+                          <span>{admin.phone}</span>
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        {admin.status === 'active' ? (
+                          <Badge variant="success" className="font-semibold text-[10px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+                            Active Access
+                          </Badge>
+                        ) : (
+                          <Badge variant="slate" className="font-semibold text-[10px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5"></span>
+                            Deactivated
+                          </Badge>
+                        )}
+                      </td>
+
+                      <td className="py-3.5 px-4 text-slate-500 text-[11px]">
+                        {formatDate(admin.lastActive)}
+                      </td>
+
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Link href={`/permissions?adminId=${admin.id}`}>
+                            <Button variant="outline" size="sm" className="text-xs bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300">
+                              <KeyRound className="w-3.5 h-3.5 mr-1 text-amber-600" />
+                              Permissions
+                            </Button>
+                          </Link>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditingAdmin(admin);
+                              setEditPassword('');
+                              setEditPasswordError('');
+                            }}
+                            title="Edit Admin Information"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 text-slate-600" />
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleAdminStatus(admin.id)}
+                            title={admin.status === 'active' ? 'Deactivate Access' : 'Activate Access'}
+                            className={admin.status === 'active' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50'}
+                          >
+                            <Power className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      {/* CREATE ADMIN MODAL */}
+      {/* ======================================================== */}
+      {/* 1. CREATE ADMIN MODAL WITH ROLE DROPDOWN & PASSWORD      */}
+      {/* ======================================================== */}
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         title="Create New Admin Account"
-        description="Provision login credentials and baseline permissions for the existing Admin Panel."
+        description="Provision login credentials and assign an Operational Role for the existing Admin Panel."
         maxWidth="lg"
       >
         <form onSubmit={handleCreateSubmit} className="space-y-4">
@@ -401,26 +534,48 @@ export default function AdminsPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Operational Role Title *"
-              value={formData.roleTitle}
-              onChange={(e) => setFormData({ ...formData, roleTitle: e.target.value })}
-              placeholder="e.g. Kitchen Supervisor"
-            />
-            <Select
-              label="Initial Permission Template"
-              value={formData.preset}
-              onChange={(e) => setFormData({ ...formData, preset: e.target.value })}
+          {/* DYNAMIC OPERATIONAL ROLE DROPDOWN */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-amber-600" />
+                <span>Operational Role *</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsCreateRoleModalOpen(true)}
+                className="text-xs font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1 cursor-pointer hover:underline"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Create New Role</span>
+              </button>
+            </div>
+
+            <select
+              value={formData.roleId || roles[0]?.id || ''}
+              onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
+              className="w-full h-11 px-3.5 text-sm font-semibold bg-white border border-slate-300 rounded-xl text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
             >
-              <option value="front_desk">Front Counter Clerk (Orders & Slip Print)</option>
-              <option value="kitchen_lead">Kitchen Lead (Prep & Dispatch)</option>
-              <option value="operations_manager">Operations Manager (Full Operational Access)</option>
-            </Select>
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name} {r.isSystemDefault ? '(System Preset)' : '(Custom Role)'}
+                </option>
+              ))}
+            </select>
+
+            {(() => {
+              const currentRole = roles.find((r) => r.id === (formData.roleId || roles[0]?.id));
+              if (!currentRole) return null;
+              return (
+                <p className="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                  <strong>Role Scope:</strong> {currentRole.description}
+                </p>
+              );
+            })()}
           </div>
 
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-600">
-            <strong>Note:</strong> You can fine-tune every single module permission (Orders, Products, Categories, Payments, Staff, Customers) after creating the account via the <strong>Custom Permissions Matrix</strong>.
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-600">
+            <strong>Note:</strong> Selected role provides initial permissions. You can fine-tune every single module permission (Orders, Products, Categories, Payments, Staff, Customers) anytime via the <strong>Custom Permissions Matrix</strong>.
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
@@ -434,13 +589,16 @@ export default function AdminsPage() {
         </form>
       </Modal>
 
-      {/* EDIT ADMIN MODAL */}
+      {/* ======================================================== */}
+      {/* 2. EDIT ADMIN MODAL WITH ROLE SELECTOR & RESET PASSWORD  */}
+      {/* ======================================================== */}
       {editingAdmin && (
         <Modal
           isOpen={true}
           onClose={() => setEditingAdmin(null)}
           title={`Edit Admin: ${editingAdmin.name}`}
-          description="Update staff profile and credentials."
+          description="Update staff profile, assigned Operational Role, and login credentials."
+          maxWidth="lg"
         >
           <form onSubmit={handleEditSubmit} className="space-y-4">
             <Input
@@ -448,30 +606,60 @@ export default function AdminsPage() {
               value={editingAdmin.name}
               onChange={(e) => setEditingAdmin({ ...editingAdmin, name: e.target.value })}
             />
-            <Input
-              label="Email Address *"
-              type="email"
-              value={editingAdmin.email}
-              onChange={(e) => setEditingAdmin({ ...editingAdmin, email: e.target.value })}
-            />
-            <Input
-              label="Phone Number *"
-              value={editingAdmin.phone}
-              onChange={(e) => setEditingAdmin({ ...editingAdmin, phone: e.target.value })}
-            />
-            <Input
-              label="Operational Role Title"
-              value={editingAdmin.roleTitle}
-              onChange={(e) => setEditingAdmin({ ...editingAdmin, roleTitle: e.target.value })}
-            />
-            <Select
-              label="Account Status"
-              value={editingAdmin.status}
-              onChange={(e) => setEditingAdmin({ ...editingAdmin, status: e.target.value as 'active' | 'inactive' })}
-            >
-              <option value="active">Active (Access Granted)</option>
-              <option value="inactive">Inactive (Access Suspended)</option>
-            </Select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Email Address *"
+                type="email"
+                value={editingAdmin.email}
+                onChange={(e) => setEditingAdmin({ ...editingAdmin, email: e.target.value })}
+              />
+              <Input
+                label="Phone Number *"
+                value={editingAdmin.phone}
+                onChange={(e) => setEditingAdmin({ ...editingAdmin, phone: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
+                  Assigned Operational Role
+                </label>
+                <select
+                  value={editingAdmin.roleId || roles.find((r) => r.name === editingAdmin.roleTitle)?.id || roles[0]?.id}
+                  onChange={(e) => {
+                    const foundRole = roles.find((r) => r.id === e.target.value);
+                    setEditingAdmin({
+                      ...editingAdmin,
+                      roleId: e.target.value,
+                      roleTitle: foundRole ? foundRole.name : editingAdmin.roleTitle,
+                      permissions: foundRole ? foundRole.permissions : editingAdmin.permissions,
+                    });
+                  }}
+                  className="w-full h-10 px-3 text-sm font-semibold bg-white border border-slate-300 rounded-lg text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                >
+                  {roles.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
+                  Account Status
+                </label>
+                <select
+                  value={editingAdmin.status}
+                  onChange={(e) => setEditingAdmin({ ...editingAdmin, status: e.target.value as 'active' | 'inactive' })}
+                  className="w-full h-10 px-3 text-sm font-semibold bg-white border border-slate-300 rounded-lg text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                >
+                  <option value="active">Active (Access Granted)</option>
+                  <option value="inactive">Inactive (Access Suspended)</option>
+                </select>
+              </div>
+            </div>
 
             {/* Reset / Change Password Section */}
             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
@@ -501,7 +689,7 @@ export default function AdminsPage() {
                     setEditPassword(e.target.value);
                     if (editPasswordError) setEditPasswordError('');
                   }}
-                  placeholder="Leave blank to keep existing password"
+                  placeholder="Leave blank to keep current password"
                   className="w-full h-10 px-3.5 pr-20 text-sm font-mono bg-white border border-slate-300 rounded-lg text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-slate-400">
@@ -554,7 +742,251 @@ export default function AdminsPage() {
           </form>
         </Modal>
       )}
+
+      {/* ======================================================== */}
+      {/* 3. MANAGE ROLES MODAL (LIST OF ALL DEFINED ROLES)        */}
+      {/* ======================================================== */}
+      <Modal
+        isOpen={isManageRolesModalOpen}
+        onClose={() => setIsManageRolesModalOpen(false)}
+        title="Manage Operational Roles"
+        description="Defined roles with pre-configured access bundles. These appear in the Admin creation dropdown."
+        maxWidth="2xl"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-slate-500">
+              Showing <strong>{roles.length}</strong> available operational roles.
+            </p>
+            <Button
+              size="sm"
+              onClick={() => {
+                setIsCreateRoleModalOpen(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              + Create New Role
+            </Button>
+          </div>
+
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+            {roles.map((role) => (
+              <div
+                key={role.id}
+                className="p-4 rounded-xl border border-slate-200 bg-white hover:border-amber-300 transition-all space-y-2 shadow-2xs"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-900 text-sm">{role.name}</span>
+                    {role.isSystemDefault ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                        Default Preset
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                        Super Admin Custom
+                      </span>
+                    )}
+                  </div>
+
+                  {!role.isSystemDefault && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteRole(role.id)}
+                      className="text-rose-600 hover:bg-rose-50 h-8 px-2 text-xs"
+                      title="Delete Custom Role"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1" />
+                      Delete
+                    </Button>
+                  )}
+                </div>
+
+                <p className="text-xs text-slate-600">{role.description}</p>
+
+                {/* Modules Summary Tags */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                  <span className="text-[10px] font-semibold text-slate-400">Included Modules:</span>
+                  {role.permissions.orders.viewOrders && (
+                    <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md border border-emerald-200">
+                      Orders
+                    </span>
+                  )}
+                  {role.permissions.products.viewProducts && (
+                    <span className="text-[10px] bg-sky-50 text-sky-700 px-2 py-0.5 rounded-md border border-sky-200">
+                      Products
+                    </span>
+                  )}
+                  {role.permissions.categories.viewCategories && (
+                    <span className="text-[10px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded-md border border-purple-200">
+                      Categories
+                    </span>
+                  )}
+                  {role.permissions.payments.viewPayments && (
+                    <span className="text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200">
+                      Payments
+                    </span>
+                  )}
+                  {role.permissions.deliveryStaff.viewStaff && (
+                    <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md border border-indigo-200">
+                      Delivery Fleet
+                    </span>
+                  )}
+                  {role.permissions.customers.viewCustomers && (
+                    <span className="text-[10px] bg-teal-50 text-teal-700 px-2 py-0.5 rounded-md border border-teal-200">
+                      Customers
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end pt-3 border-t border-slate-100">
+            <Button variant="outline" onClick={() => setIsManageRolesModalOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ======================================================== */}
+      {/* 4. CREATE NEW ROLE MODAL (SUPER ADMIN DEFINES A ROLE)   */}
+      {/* ======================================================== */}
+      <Modal
+        isOpen={isCreateRoleModalOpen}
+        onClose={() => setIsCreateRoleModalOpen(false)}
+        title="Create New Operational Role"
+        description="Define a new role and choose which restaurant operational modules it can access."
+        maxWidth="lg"
+      >
+        <form onSubmit={handleCreateRoleSubmit} className="space-y-4">
+          <Input
+            label="Role Name / Job Title *"
+            placeholder="e.g. Night Shift Supervisor, Cashier & Expediter"
+            value={newRoleData.name}
+            onChange={(e) => {
+              setNewRoleData({ ...newRoleData, name: e.target.value });
+              if (newRoleError) setNewRoleError('');
+            }}
+            error={newRoleError}
+          />
+
+          <Input
+            label="Role Description"
+            placeholder="e.g. Handles kitchen prep queue, dispatching & customer handovers"
+            value={newRoleData.description}
+            onChange={(e) => setNewRoleData({ ...newRoleData, description: e.target.value })}
+          />
+
+          <div>
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">
+              Module Access Permissions
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <label className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100/50 cursor-pointer transition-colors">
+                <input
+                  type="checkbox"
+                  checked={newRoleData.canOrders}
+                  onChange={(e) => setNewRoleData({ ...newRoleData, canOrders: e.target.checked })}
+                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                />
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">Orders Management</span>
+                  <span className="text-[10px] text-slate-500">Live queue, status dispatch & invoices</span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100/50 cursor-pointer transition-colors">
+                <input
+                  type="checkbox"
+                  checked={newRoleData.canProducts}
+                  onChange={(e) => setNewRoleData({ ...newRoleData, canProducts: e.target.checked })}
+                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                />
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">Products & Menu</span>
+                  <span className="text-[10px] text-slate-500">Dish pricing in BSD, stock availability</span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100/50 cursor-pointer transition-colors">
+                <input
+                  type="checkbox"
+                  checked={newRoleData.canCategories}
+                  onChange={(e) => setNewRoleData({ ...newRoleData, canCategories: e.target.checked })}
+                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                />
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">Menu Categories</span>
+                  <span className="text-[10px] text-slate-500">Sections catalog & food banners</span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100/50 cursor-pointer transition-colors">
+                <input
+                  type="checkbox"
+                  checked={newRoleData.canPayments}
+                  onChange={(e) => setNewRoleData({ ...newRoleData, canPayments: e.target.checked })}
+                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                />
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">Payments & Reconciliations</span>
+                  <span className="text-[10px] text-slate-500">Transactions & COD cash collection</span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100/50 cursor-pointer transition-colors">
+                <input
+                  type="checkbox"
+                  checked={newRoleData.canDeliveryStaff}
+                  onChange={(e) => setNewRoleData({ ...newRoleData, canDeliveryStaff: e.target.checked })}
+                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                />
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">Delivery Staff</span>
+                  <span className="text-[10px] text-slate-500">Fleet couriers & delivery orders</span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100/50 cursor-pointer transition-colors">
+                <input
+                  type="checkbox"
+                  checked={newRoleData.canCustomers}
+                  onChange={(e) => setNewRoleData({ ...newRoleData, canCustomers: e.target.checked })}
+                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                />
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">Customer Records</span>
+                  <span className="text-[10px] text-slate-500">Registered diner history & ban access</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div className="p-3 bg-amber-50 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 leading-relaxed">
+            ✨ Once created, this role will instantly appear in the <strong>Operational Role dropdown</strong> when provisioning new Admin accounts!
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsCreateRoleModalOpen(false);
+                setNewRoleError('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold">
+              Save Role
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </SuperAdminLayout>
   );
 }
-

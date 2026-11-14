@@ -75,12 +75,23 @@ export interface AdminPermissions {
   customers: CustomersPermissions;
 }
 
+export interface CustomRole {
+  id: string;
+  name: string;
+  description: string;
+  badgeColor?: 'amber' | 'emerald' | 'sky' | 'purple' | 'slate';
+  permissions: AdminPermissions;
+  isSystemDefault?: boolean;
+  createdAt: string;
+}
+
 export interface AdminAccount {
   id: string;
   name: string;
   email: string;
   phone: string;
   password?: string;
+  roleId?: string;
   roleTitle: string; // e.g. "Kitchen Supervisor", "Front Counter Clerk", "Operations Manager"
   status: 'active' | 'inactive';
   lastActive: string;
@@ -103,6 +114,9 @@ export type ActivityActionType =
   | 'permissions_updated'
   | 'admin_created'
   | 'admin_status_changed'
+  | 'role_created'
+  | 'role_updated'
+  | 'role_deleted'
   | 'settings_updated';
 
 export interface ActivityLog {

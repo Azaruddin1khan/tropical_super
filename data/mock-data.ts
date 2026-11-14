@@ -1,5 +1,6 @@
 import {
   AdminAccount,
+  CustomRole,
   Order,
   Product,
   Category,
@@ -9,6 +10,60 @@ import {
   RestaurantSettings,
 } from '@/types';
 import { PRESET_TEMPLATES, FULL_PERMISSIONS_TEMPLATE } from '@/lib/utils';
+
+export const initialCustomRoles: CustomRole[] = [
+  {
+    id: 'role-ops-mgr',
+    name: 'Store Operations Manager',
+    description: 'Full supervisory authority across kitchen, orders, payments, staff & inventory.',
+    badgeColor: 'amber',
+    permissions: FULL_PERMISSIONS_TEMPLATE,
+    isSystemDefault: true,
+    createdAt: '2026-10-01T08:00:00Z',
+  },
+  {
+    id: 'role-kitchen-lead',
+    name: 'Kitchen & Dispatch Lead',
+    description: 'Supervises food prep queue, recipe stock availability & courier dispatch handover.',
+    badgeColor: 'emerald',
+    permissions: PRESET_TEMPLATES.kitchen_lead.permissions,
+    isSystemDefault: true,
+    createdAt: '2026-10-01T08:00:00Z',
+  },
+  {
+    id: 'role-front-desk',
+    name: 'Front Counter Clerk',
+    description: 'Processes dine-in counter orders, ticket printing & marks cash received.',
+    badgeColor: 'sky',
+    permissions: PRESET_TEMPLATES.front_desk.permissions,
+    isSystemDefault: true,
+    createdAt: '2026-10-01T08:00:00Z',
+  },
+  {
+    id: 'role-inventory',
+    name: 'Inventory & Menu Specialist',
+    description: 'Manages menu items, pricing in BSD, categories catalog & stock availability switches.',
+    badgeColor: 'purple',
+    permissions: {
+      ...PRESET_TEMPLATES.front_desk.permissions,
+      products: {
+        viewProducts: true,
+        addProducts: true,
+        editProducts: true,
+        deleteProducts: true,
+        updateStockAvailability: true,
+      },
+      categories: {
+        viewCategories: true,
+        addCategories: true,
+        editCategories: true,
+        deleteCategories: true,
+      },
+    },
+    isSystemDefault: false,
+    createdAt: '2026-10-05T09:00:00Z',
+  },
+];
 
 export const initialAdminAccounts: AdminAccount[] = [
   {

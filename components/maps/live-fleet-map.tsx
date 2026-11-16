@@ -57,6 +57,8 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
 
   const [isSimulating, setIsSimulating] = useState(true);
   const [selectedDriverId, setSelectedDriverId] = useState<string | null>('drv-001');
+  const [mapStyle, setMapStyle] = useState<'streets' | 'osm' | 'satellite'>('streets');
+  const tileLayerRef = useRef<any>(null);
 
   // Initial Real Nassau Simulation Telemetry for Couriers
   const [telemetry, setTelemetry] = useState<DriverTelemetry[]>([
@@ -149,12 +151,16 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
       // Zoom Control in top right
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      // CartoDB Voyager Clean High-Def Road Tiles (No API Key Required)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 19,
-      }).addTo(map);
+      // Clean High-Def Road Tiles (100% Free, Zero Watermark, No API Key Required)
+      const tileLayer = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+        {
+          attribution: 'Tiles &copy; Esri, OpenStreetMap contributors',
+          maxZoom: 19,
+        }
+      ).addTo(map);
+
+      tileLayerRef.current = tileLayer;
 
       // 3.0-Mile Strict Delivery Boundary Circle
       const deliveryRadiusCircle = L.circle(STORE_LOCATION, {
@@ -217,6 +223,20 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
       }
     };
   }, []);
+
+  // Handle Map Style Switcher (Streets / OSM / Satellite)
+  useEffect(() => {
+    if (!tileLayerRef.current) return;
+
+    let url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+    if (mapStyle === 'osm') {
+      url = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    } else if (mapStyle === 'satellite') {
+      url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+    }
+
+    tileLayerRef.current.setUrl(url);
+  }, [mapStyle]);
 
   // 2. Render & Update Couriers Markers & Paths
   useEffect(() => {
@@ -366,7 +386,44 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
           </span>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+          {/* Map Layer Switcher: 100% Free, Zero Watermark */}
+          <div className="flex items-center p-0.5 bg-slate-100 rounded-lg border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setMapStyle('streets')}
+              className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+                mapStyle === 'streets'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              🧭 Clean Streets
+            </button>
+            <button
+              type="button"
+              onClick={() => setMapStyle('osm')}
+              className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+                mapStyle === 'osm'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              🗺️ OpenStreetMap
+            </button>
+            <button
+              type="button"
+              onClick={() => setMapStyle('satellite')}
+              className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+                mapStyle === 'satellite'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              🛰️ Satellite
+            </button>
+          </div>
+
           <Button
             size="sm"
             variant="outline"
@@ -510,3 +567,4 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
     </div>
   );
 }
+

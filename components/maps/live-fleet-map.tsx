@@ -19,6 +19,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DeliveryStaff, Order } from '@/types';
+import { NASSAU_STREET_ROUTE } from '@/data/nassau-route';
 import 'leaflet/dist/leaflet.css';
 
 // Nassau, Bahamas Key Coordinates
@@ -78,13 +79,7 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
       speedKmh: 31,
       batteryPct: 86,
       routeProgress: 0.45,
-      waypoints: [
-        [25.0478, -77.3554], // Store
-        [25.0530, -77.3680],
-        [25.0610, -77.3820], // Current
-        [25.0690, -77.3990],
-        [25.0760, -77.4120], // Customer Destination
-      ],
+      waypoints: NASSAU_STREET_ROUTE,
     },
     {
       driverId: 'drv-002',

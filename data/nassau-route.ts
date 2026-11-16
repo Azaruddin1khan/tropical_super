@@ -409,3 +409,34 @@ export const NASSAU_STREET_ROUTE: [number, number][] = [
   [25.067620, -77.395528],
   [25.067687, -77.394955],
 ];
+
+// Real Street-Snapped Road Navigation Nodes along East Bay Street, Nassau
+// From Tropical Gyros Flagship (Bay St) to Montagu Beach / Nassau Harbour
+export const NASSAU_EAST_ROUTE: [number, number][] = [
+  [25.047794, -77.355361], // TG Flagship Store
+  [25.048500, -77.354800],
+  [25.048957, -77.353800],
+  [25.049050, -77.351200],
+  [25.049100, -77.348500],
+  [25.049050, -77.345200],
+  [25.048950, -77.342000], // Parliament St & Rawson Square
+  [25.048800, -77.338500], // Woodes Rodgers Walk / Nassau Cruise Port
+  [25.048650, -77.335000],
+  [25.048550, -77.331500], // Potter's Cay Dock
+  [25.048600, -77.327500], // Sir Sidney Poitier Bridge Turnoff
+  [25.048750, -77.323500], // Harbour Bay Shopping Plaza
+  [25.048900, -77.319500],
+  [25.049050, -77.315500], // Fort Montagu
+  [25.049200, -77.311500], // Montagu Beach Waterfront (Customer Doorstep)
+];
+
+// Patrol / Return Route for Available Couriers around Downtown Nassau & Saunders Beach
+export const NASSAU_PATROL_ROUTE: [number, number][] = [
+  [25.053836, -77.369543], // Saunders Beach
+  [25.051105, -77.364852],
+  [25.049813, -77.362632],
+  [25.049522, -77.361712],
+  [25.049185, -77.358650], // West Bay St
+  [25.048957, -77.355077],
+  [25.047794, -77.355361], // Downtown Flagship
+];

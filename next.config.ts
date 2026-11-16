@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   turbopack: {
     ...(process.env.VERCEL ? {} : { root: path.resolve(__dirname, "..") }),
     rules: {

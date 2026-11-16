@@ -252,24 +252,21 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
         const pulseAnim = isDelivering ? 'animate-pulse' : '';
 
         const courierHtml = `
-          <div class="relative cursor-pointer transition-transform hover:scale-110">
-            <div class="w-10 h-10 rounded-full bg-white border-2 shadow-xl flex items-center justify-center overflow-hidden" style="border-color: ${ringColor}">
-              <img src="${courier.avatarUrl}" class="w-full h-full object-cover" />
+          <div class="relative cursor-pointer transition-transform hover:scale-110 flex flex-col items-center">
+            <div class="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900/90 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow flex items-center gap-1 border border-slate-700">
+              <span class="w-1.5 h-1.5 rounded-full ${isDelivering ? 'bg-sky-400' : 'bg-emerald-400'}"></span>
+              <span>${courier.driverName.split(' ')[0]}</span>
+              <span class="text-amber-400 font-mono text-[8px]">• ${courier.speedKmh} km/h</span>
             </div>
-            <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-slate-900 border border-white flex items-center justify-center text-[9px] text-white ${pulseAnim}">
-              🛵
-            </div>
-            <div class="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900/90 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
-              ${courier.driverName.split(' ')[0]} • ${courier.speedKmh} km/h
-            </div>
+            <img src="/images/delivery_boy_3d.png" class="w-10 h-14 object-contain filter drop-shadow-md" style="transform: rotate(${courier.heading}deg)" />
           </div>
         `;
 
         const courierIcon = L.divIcon({
           html: courierHtml,
           className: 'custom-driver-pin',
-          iconSize: [40, 40],
-          iconAnchor: [20, 20],
+          iconSize: [44, 56],
+          iconAnchor: [22, 28],
         });
 
         // Update or Create Marker

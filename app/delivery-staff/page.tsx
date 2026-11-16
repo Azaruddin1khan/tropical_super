@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import {
   Bike,
@@ -17,6 +18,9 @@ import {
   Edit,
   AlertCircle,
   Truck,
+  MapPin,
+  Compass,
+  List,
 } from 'lucide-react';
 import { SuperAdminLayout } from '@/components/layout/super-admin-layout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,9 +32,26 @@ import { useSuperAdmin } from '@/context/super-admin-context';
 import { DeliveryStaff, DriverStatus } from '@/types';
 import { formatCurrency, formatShortDate } from '@/lib/utils';
 
+// Dynamic import for Leaflet map (disables SSR to prevent window errors)
+const LiveFleetMap = dynamic(
+  () => import('@/components/maps/live-fleet-map').then((mod) => mod.LiveFleetMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[520px] w-full rounded-2xl bg-slate-100 flex items-center justify-center border border-slate-200">
+        <div className="text-center space-y-2">
+          <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs font-bold text-slate-600">Loading Nassau Fleet Radar Map...</p>
+        </div>
+      </div>
+    ),
+  }
+);
+
 export default function DeliveryStaffPage() {
   const { drivers, orders, addDriver, editDriver, toggleDriverStatus, toggleDriverActive } = useSuperAdmin();
 
+  const [activeView, setActiveView] = useState<'map' | 'list'>('map');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -185,7 +206,46 @@ export default function DeliveryStaffPage() {
           </Card>
         </div>
 
-        {/* Search & Filter */}
+        {/* View Switcher: Fleet Radar Map vs Directory Table */}
+        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+          <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setActiveView('map')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeView === 'map'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Compass className="w-4 h-4 text-amber-600" />
+              <span>🛰️ Live Fleet Radar (Map)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveView('list')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeView === 'list'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <List className="w-4 h-4 text-slate-600" />
+              <span>📋 Couriers Directory ({drivers.length})</span>
+            </button>
+          </div>
+
+          <span className="text-xs text-slate-500 font-medium hidden sm:inline-block">
+            {activeView === 'map' ? '🛰️ Real-time GPS Telemetry Active' : 'Staff profiles & accounts'}
+          </span>
+        </div>
+
+        {activeView === 'map' ? (
+          <LiveFleetMap drivers={drivers} orders={orders} />
+        ) : (
+          <>
+            {/* Search & Filter */}
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -339,6 +399,8 @@ export default function DeliveryStaffPage() {
             </table>
           </div>
         </div>
+        </>
+      )}
       </div>
 
       {/* Add / Edit Courier Modal */}

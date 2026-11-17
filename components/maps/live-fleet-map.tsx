@@ -276,7 +276,7 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
             </div>
 
             <!-- 3D Isometric Scooter Asset (Cleaned, Upright, Soft Shadow) -->
-            <div class="relative w-11 h-14 flex items-center justify-center filter drop-shadow-[0_8px_10px_rgba(0,0,0,0.35)]">
+            <div class="relative w-12 h-16 flex items-center justify-center filter drop-shadow-[0_8px_12px_rgba(0,0,0,0.35)]">
               <img 
                 src="/images/delivery_boy_3d.png" 
                 alt="${courier.driverName}" 
@@ -290,8 +290,8 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
         const courierIcon = L.divIcon({
           html: courierHtml,
           className: 'custom-driver-pin',
-          iconSize: [54, 66],
-          iconAnchor: [27, 33],
+          iconSize: [56, 76],
+          iconAnchor: [28, 38],
         });
 
         // Update or Create Marker

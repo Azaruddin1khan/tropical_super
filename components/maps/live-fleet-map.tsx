@@ -79,13 +79,13 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
       status: 'on_delivery',
       orderId: 'TG-104',
       customerName: 'Marcus Cole',
-      customerAddress: 'West Bay St, Cable Beach, Nassau',
-      currentLat: NASSAU_STREET_ROUTE[Math.floor(NASSAU_STREET_ROUTE.length * 0.55)][0],
-      currentLng: NASSAU_STREET_ROUTE[Math.floor(NASSAU_STREET_ROUTE.length * 0.55)][1],
-      heading: 295,
+      customerAddress: 'West Bay St, Saunders Beach, Nassau',
+      currentLat: NASSAU_STREET_ROUTE[Math.floor(NASSAU_STREET_ROUTE.length * 0.45)][0],
+      currentLng: NASSAU_STREET_ROUTE[Math.floor(NASSAU_STREET_ROUTE.length * 0.45)][1],
+      heading: 275,
       speedKmh: 31,
       batteryPct: 86,
-      routeProgress: 0.55,
+      routeProgress: 0.45,
       waypoints: NASSAU_STREET_ROUTE,
     },
     {
@@ -98,12 +98,12 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
       orderId: 'TG-102',
       customerName: 'Elena Rostova',
       customerAddress: 'East Bay Street, Montagu Beach',
-      currentLat: NASSAU_EAST_ROUTE[Math.floor(NASSAU_EAST_ROUTE.length * 0.60)][0],
-      currentLng: NASSAU_EAST_ROUTE[Math.floor(NASSAU_EAST_ROUTE.length * 0.60)][1],
-      heading: 95,
+      currentLat: NASSAU_EAST_ROUTE[Math.floor(NASSAU_EAST_ROUTE.length * 0.50)][0],
+      currentLng: NASSAU_EAST_ROUTE[Math.floor(NASSAU_EAST_ROUTE.length * 0.50)][1],
+      heading: 85,
       speedKmh: 27,
       batteryPct: 92,
-      routeProgress: 0.60,
+      routeProgress: 0.50,
       waypoints: NASSAU_EAST_ROUTE,
     },
     {
@@ -113,12 +113,12 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
       vehicleNumber: 'NP-1042',
       vehicleType: 'Electric Scooter',
       status: 'available',
-      currentLat: NASSAU_PATROL_ROUTE[Math.floor(NASSAU_PATROL_ROUTE.length * 0.35)][0],
-      currentLng: NASSAU_PATROL_ROUTE[Math.floor(NASSAU_PATROL_ROUTE.length * 0.35)][1],
-      heading: 240,
+      currentLat: NASSAU_PATROL_ROUTE[Math.floor(NASSAU_PATROL_ROUTE.length * 0.25)][0],
+      currentLng: NASSAU_PATROL_ROUTE[Math.floor(NASSAU_PATROL_ROUTE.length * 0.25)][1],
+      heading: 220,
       speedKmh: 18,
       batteryPct: 74,
-      routeProgress: 0.35,
+      routeProgress: 0.25,
       waypoints: NASSAU_PATROL_ROUTE,
     },
   ]);
@@ -133,9 +133,9 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
       const L = (await import('leaflet')).default;
       if (!isMounted || !mapContainerRef.current) return;
 
-      // Create Map Centered on Nassau
+      // Create Map Centered on Flagship Store
       const map = L.map(mapContainerRef.current, {
-        center: [25.0560, -77.3620],
+        center: STORE_LOCATION,
         zoom: 13,
         zoomControl: false,
       });
@@ -169,6 +169,19 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
         permanent: false,
         direction: 'top',
         className: 'text-xs font-bold text-amber-900 bg-amber-50 border border-amber-300 rounded-md p-1 shadow-sm',
+      });
+
+      // Fit initial bounds to include Store, 3-Mile Zone, and Waypoints
+      const initialFramePoints: [number, number][] = [
+        STORE_LOCATION,
+        [STORE_LOCATION[0] + 0.025, STORE_LOCATION[1] - 0.045],
+        [STORE_LOCATION[0] - 0.025, STORE_LOCATION[1] + 0.025],
+        NASSAU_STREET_ROUTE[NASSAU_STREET_ROUTE.length - 1],
+        NASSAU_EAST_ROUTE[NASSAU_EAST_ROUTE.length - 1],
+      ];
+      map.fitBounds(L.latLngBounds(initialFramePoints), {
+        padding: [40, 40],
+        maxZoom: 14,
       });
 
       // Store Flagship Marker
@@ -314,7 +327,9 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
           const customerKey = `cust-${courier.driverId}`;
           const destCoord = courier.waypoints[courier.waypoints.length - 1];
 
-          if (!customerMarkersRef.current[customerKey] && destCoord) {
+          if (customerMarkersRef.current[customerKey] && destCoord) {
+            customerMarkersRef.current[customerKey].setLatLng(destCoord);
+          } else if (destCoord) {
             const customerHtml = `
               <div class="relative flex flex-col items-center justify-center cursor-pointer group">
                 <div class="w-8 h-8 rounded-full bg-slate-900 border-2 border-white shadow-lg flex items-center justify-center text-white font-bold text-xs">
@@ -423,6 +438,9 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
       const points: [number, number][] = [
         STORE_LOCATION,
         ...telemetry.map((t) => [t.currentLat, t.currentLng] as [number, number]),
+        ...telemetry
+          .filter((t) => t.status === 'on_delivery' && t.waypoints.length > 0)
+          .map((t) => t.waypoints[t.waypoints.length - 1]),
       ];
       const bounds = L.latLngBounds(points);
       mapInstanceRef.current.fitBounds(bounds, { padding: [60, 60], maxZoom: 14 });
@@ -520,7 +538,7 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
                 <Play className="w-3.5 h-3.5 mr-1" /> Resume Live Stream
               </>
             )}
-          </Button>
+          </Button>I 
         </div>
       </div>
 

@@ -74,7 +74,7 @@ export function Topbar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
             {getPageTitle()}
           </h1>
           <p className="text-[11px] text-slate-400 font-medium hidden sm:block">
-            Tropical Gyros HQ • Miami Beach Kitchen
+            Tropical Gyros Flagship • Rosetta St & Mackey St, Palmdale, Nassau
           </p>
         </div>
       </div>

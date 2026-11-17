@@ -28,9 +28,9 @@ import {
 } from '@/data/nassau-route';
 import 'leaflet/dist/leaflet.css';
 
-// Nassau, Bahamas Key Coordinates
-const STORE_LOCATION: [number, number] = [25.047794, -77.355361]; // Tropical Gyros Flagship (Bay St, Nassau)
-const DELIVERY_RADIUS_METERS = 4828; // Strict 3.0-mile boundary
+// Official Nassau Flagship Coordinates (Rosetta St & Mackey St, Palmdale, Nassau, Bahamas)
+const STORE_LOCATION: [number, number] = [25.0675, -77.3245]; // Tropical Gyros Flagship
+const DELIVERY_RADIUS_METERS = 4828; // Strict 3.0-mile boundary (1609.34m * 3)
 
 interface DriverTelemetry {
   driverId: string;
@@ -194,11 +194,12 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
       L.marker(STORE_LOCATION, { icon: storeIcon })
         .addTo(map)
         .bindPopup(`
-          <div style="font-family: system-ui; min-width: 200px; padding: 4px;">
-            <div style="font-weight: 800; font-size: 14px; color: #0f172a;">Tropical Gyros Store</div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Bay St & Parliament St, Downtown Nassau</div>
+          <div style="font-family: system-ui; min-width: 220px; padding: 4px;">
+            <div style="font-weight: 800; font-size: 14px; color: #0f172a;">Tropical Gyros Flagship</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Rosetta St & Mackey St, Palmdale, Nassau</div>
+            <div style="font-size: 11px; color: #0284c7; margin-top: 2px; font-weight: 600;">📞 +1 (242) 462-6299</div>
             <div style="margin-top: 8px; font-size: 11px; font-weight: 700; color: #166534; background: #dcfce7; padding: 4px 8px; border-radius: 6px; display: inline-block;">
-              🍗 Central Kitchen Dispatch Active
+              🍗 Central Flagship Dispatch • 3-Mile Zone
             </div>
           </div>
         `);

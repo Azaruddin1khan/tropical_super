@@ -564,19 +564,19 @@ export const initialActivityLogs: ActivityLog[] = [
 ];
 
 export const initialSettings: RestaurantSettings = {
-  name: 'Tropical Gyros',
+  name: 'Tropical Gyros Flagship',
   tagline: 'Authentic Gyros, Bowls, Seafood & Salads',
-  email: 'operations@tropicalgyros.com',
-  phone: '+1 (242) 322-GYRO',
-  address: '10 Bay Street, Downtown Nassau, Bahamas',
+  email: 'palmdale@tropicalgyros.com',
+  phone: '+1 (242) 462-6299',
+  address: 'Rosetta Street & Mackey Street, Palmdale, Nassau, Bahamas',
   city: 'Nassau',
   state: 'New Providence',
-  zipCode: 'SS-19001',
+  zipCode: 'N-4832',
   businessHours: 'Mon - Sun: 10:00 AM - 11:00 PM',
   maxDeliveryRadiusMiles: 3.0, // Strict 3.0-mile limit
   deliveryFeeBsd: 2.99,
   taxRate: 0.08, // 8% VAT
   platformFeeBsd: 0.99,
-  supportContact: '+1 (242) 555-HELP',
+  supportContact: '+1 (242) 462-6299',
 };
 

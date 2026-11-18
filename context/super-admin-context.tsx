@@ -27,6 +27,7 @@ import {
   initialSettings,
 } from '@/data/mock-data';
 import { isDuplicateCategoryName } from '@/lib/utils';
+import { SuperAdminApi } from '@/lib/api';
 
 export interface ToastMessage {
   id: string;
@@ -139,6 +140,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
       ipAddress: '192.168.1.1 (Super Admin Master)',
     };
     setActivityLogs((prev) => [newLog, ...prev]);
+    SuperAdminApi.createActivityLog(newLog).catch(() => {});
   };
 
   // LocalStorage Hydration
@@ -176,6 +178,60 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
     } catch {
       // LocalStorage access fallback
     }
+
+    // Fetch live data from backend API with fallback
+    const syncFromBackend = async () => {
+      try {
+        const [
+          adminsRes,
+          rolesRes,
+          ordersRes,
+          productsRes,
+          categoriesRes,
+          driversRes,
+          customersRes,
+          settingsRes,
+        ] = await Promise.allSettled([
+          SuperAdminApi.getAdmins(),
+          SuperAdminApi.getRoles(),
+          SuperAdminApi.getOrders(),
+          SuperAdminApi.getProducts(),
+          SuperAdminApi.getCategories(),
+          SuperAdminApi.getDrivers(),
+          SuperAdminApi.getCustomers(),
+          SuperAdminApi.getSettings(),
+        ]);
+
+        if (adminsRes.status === 'fulfilled' && adminsRes.value.success && Array.isArray(adminsRes.value.data) && adminsRes.value.data.length > 0) {
+          setAdmins(adminsRes.value.data);
+        }
+        if (rolesRes.status === 'fulfilled' && rolesRes.value.success && Array.isArray(rolesRes.value.data) && rolesRes.value.data.length > 0) {
+          setRoles(rolesRes.value.data);
+        }
+        if (ordersRes.status === 'fulfilled' && ordersRes.value.success && Array.isArray(ordersRes.value.data) && ordersRes.value.data.length > 0) {
+          setOrders(ordersRes.value.data);
+        }
+        if (productsRes.status === 'fulfilled' && productsRes.value.success && Array.isArray(productsRes.value.data) && productsRes.value.data.length > 0) {
+          setProducts(productsRes.value.data);
+        }
+        if (categoriesRes.status === 'fulfilled' && categoriesRes.value.success && Array.isArray(categoriesRes.value.data) && categoriesRes.value.data.length > 0) {
+          categoriesRef.current = categoriesRes.value.data;
+          setCategories(categoriesRes.value.data);
+        }
+        if (driversRes.status === 'fulfilled' && driversRes.value.success && Array.isArray(driversRes.value.data) && driversRes.value.data.length > 0) {
+          setDrivers(driversRes.value.data);
+        }
+        if (customersRes.status === 'fulfilled' && customersRes.value.success && Array.isArray(customersRes.value.data) && customersRes.value.data.length > 0) {
+          setCustomers(customersRes.value.data);
+        }
+        if (settingsRes.status === 'fulfilled' && settingsRes.value.success && settingsRes.value.data) {
+          setSettings(settingsRes.value.data);
+        }
+      } catch (e) {
+        console.warn('Initial backend sync notice:', e);
+      }
+    };
+    syncFromBackend();
   }, []);
 
   // Sync to LocalStorage on changes
@@ -204,6 +260,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
       createdAt: new Date().toISOString(),
     };
     setAdmins((prev) => [newAdmin, ...prev]);
+    SuperAdminApi.createAdmin(newAdmin).catch(() => {});
     addActivityLog({
       adminId: 'super-admin-01',
       adminName: 'Super Administrator',
@@ -217,6 +274,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
 
   const editAdmin = (updatedAdmin: AdminAccount) => {
     setAdmins((prev) => prev.map((a) => (a.id === updatedAdmin.id ? updatedAdmin : a)));
+    SuperAdminApi.updateAdmin(updatedAdmin.id, updatedAdmin).catch(() => {});
     addActivityLog({
       adminId: 'super-admin-01',
       adminName: 'Super Administrator',
@@ -229,6 +287,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
   };
 
   const toggleAdminStatus = (adminId: string) => {
+    SuperAdminApi.toggleAdminStatus(adminId).catch(() => {});
     setAdmins((prev) =>
       prev.map((a) => {
         if (a.id === adminId) {
@@ -250,6 +309,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
   };
 
   const updateAdminPermissions = (adminId: string, newPermissions: AdminPermissions) => {
+    SuperAdminApi.updateAdminPermissions(adminId, newPermissions).catch(() => {});
     setAdmins((prev) =>
       prev.map((a) => {
         if (a.id === adminId) {
@@ -270,6 +330,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
   };
 
   const deleteAdmin = (adminId: string) => {
+    SuperAdminApi.deleteAdmin(adminId).catch(() => {});
     const target = admins.find((a) => a.id === adminId);
     setAdmins((prev) => prev.filter((a) => a.id !== adminId));
     if (target) {
@@ -295,6 +356,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
       createdAt: new Date().toISOString(),
     };
     setRoles((prev) => [...prev, newRole]);
+    SuperAdminApi.createRole(newRole).catch(() => {});
     addActivityLog({
       adminId: 'super-admin-01',
       adminName: 'Super Administrator',
@@ -309,6 +371,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
 
   const editRole = (updatedRole: CustomRole) => {
     setRoles((prev) => prev.map((r) => (r.id === updatedRole.id ? updatedRole : r)));
+    SuperAdminApi.updateRole(updatedRole.id, updatedRole).catch(() => {});
     addActivityLog({
       adminId: 'super-admin-01',
       adminName: 'Super Administrator',
@@ -324,6 +387,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
     const role = roles.find((r) => r.id === roleId);
     if (!role) return;
     setRoles((prev) => prev.filter((r) => r.id !== roleId));
+    SuperAdminApi.deleteRole(roleId).catch(() => {});
     addActivityLog({
       adminId: 'super-admin-01',
       adminName: 'Super Administrator',
@@ -339,6 +403,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
   // ORDERS ACTIONS
   // ==========================================
   const updateOrderStatus = (orderId: string, newStatus: OrderStatus) => {
+    SuperAdminApi.updateOrderStatus(orderId, newStatus).catch(() => {});
     setOrders((prev) =>
       prev.map((ord) => {
         if (ord.id === orderId) {
@@ -359,6 +424,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
   };
 
   const assignDriver = (orderId: string, driverId: string, driverName: string) => {
+    SuperAdminApi.assignDriver(orderId, driverId, driverName).catch(() => {});
     setOrders((prev) =>
       prev.map((ord) => {
         if (ord.id === orderId) {
@@ -385,6 +451,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
   };
 
   const cancelOrder = (orderId: string, reason: string = 'Administrative cancellation') => {
+    SuperAdminApi.cancelOrder(orderId, reason).catch(() => {});
     setOrders((prev) =>
       prev.map((ord) => {
         if (ord.id === orderId) {
@@ -405,6 +472,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
   };
 
   const markCodAsPaid = (orderId: string) => {
+    SuperAdminApi.markCodPaid(orderId).catch(() => {});
     setOrders((prev) =>
       prev.map((ord) => {
         if (ord.id === orderId) {
@@ -435,6 +503,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
       reviewCount: 0,
     };
     setProducts((prev) => [newProduct, ...prev]);
+    SuperAdminApi.createProduct(newProduct).catch(() => {});
     addActivityLog({
       adminId: 'super-admin-01',
       adminName: 'Super Administrator',
@@ -448,6 +517,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
 
   const editProduct = (product: Product) => {
     setProducts((prev) => prev.map((p) => (p.id === product.id ? product : p)));
+    SuperAdminApi.updateProduct(product.id, product).catch(() => {});
     addActivityLog({
       adminId: 'super-admin-01',
       adminName: 'Super Administrator',
@@ -462,6 +532,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
   const deleteProduct = (productId: string) => {
     const target = products.find((p) => p.id === productId);
     setProducts((prev) => prev.filter((p) => p.id !== productId));
+    SuperAdminApi.deleteProduct(productId).catch(() => {});
     if (target) {
       addActivityLog({
         adminId: 'super-admin-01',
@@ -476,6 +547,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
   };
 
   const toggleProductAvailability = (productId: string) => {
+    SuperAdminApi.toggleProductAvailability(productId).catch(() => {});
     setProducts((prev) =>
       prev.map((p) => {
         if (p.id === productId) {
@@ -517,6 +589,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
 
     categoriesRef.current = [...categoriesRef.current, newCategory];
     setCategories(categoriesRef.current);
+    SuperAdminApi.createCategory(newCategory).catch(() => {});
 
     addActivityLog({
       adminId: 'super-admin-01',
@@ -537,6 +610,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
 
     categoriesRef.current = categoriesRef.current.map((c) => (c.id === category.id ? category : c));
     setCategories(categoriesRef.current);
+    SuperAdminApi.updateCategory(category.id, category).catch(() => {});
     showToast('Category Updated', `${category.name} category saved.`, 'success');
     return { success: true };
   };
@@ -545,6 +619,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
     const target = categories.find((c) => c.id === categoryId);
     categoriesRef.current = categoriesRef.current.filter((c) => c.id !== categoryId);
     setCategories(categoriesRef.current);
+    SuperAdminApi.deleteCategory(categoryId).catch(() => {});
     if (target) {
       showToast('Category Removed', `${target.name} deleted.`, 'info');
     }
@@ -555,6 +630,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
       c.id === categoryId ? { ...c, isActive: !c.isActive } : c
     );
     setCategories(categoriesRef.current);
+    SuperAdminApi.toggleCategoryActive(categoryId).catch(() => {});
   };
 
   // ==========================================
@@ -569,16 +645,19 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
       unremittedCashBsd: 0.00,
     };
     setDrivers((prev) => [newDriver, ...prev]);
+    SuperAdminApi.createDriver(newDriver).catch(() => {});
     showToast('Driver Onboarded', `${newDriver.name} added to fleet.`, 'success');
   };
 
   const editDriver = (driver: DeliveryStaff) => {
     setDrivers((prev) => prev.map((d) => (d.id === driver.id ? driver : d)));
+    SuperAdminApi.createDriver(driver).catch(() => {});
     showToast('Driver Updated', `${driver.name} details saved.`, 'success');
   };
 
   const toggleDriverStatus = (driverId: string, status: DriverStatus) => {
     setDrivers((prev) => prev.map((d) => (d.id === driverId ? { ...d, status } : d)));
+    SuperAdminApi.updateDriverStatus(driverId, status).catch(() => {});
   };
 
   const toggleDriverActive = (driverId: string) => {
@@ -598,6 +677,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
   // CUSTOMERS ACTIONS
   // ==========================================
   const toggleCustomerStatus = (customerId: string) => {
+    SuperAdminApi.toggleCustomerStatus(customerId).catch(() => {});
     setCustomers((prev) =>
       prev.map((c) => {
         if (c.id === customerId) {
@@ -616,6 +696,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
   const updateSettings = (newSettings: Partial<RestaurantSettings>) => {
     setSettings((prev) => {
       const updated = { ...prev, ...newSettings };
+      SuperAdminApi.updateSettings(updated).catch(() => {});
       addActivityLog({
         adminId: 'super-admin-01',
         adminName: 'Super Administrator',

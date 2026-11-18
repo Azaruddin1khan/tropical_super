@@ -179,14 +179,14 @@ export interface Order {
   customerEmail: string;
   customerPhone: string;
   deliveryType: 'delivery' | 'pickup';
-  deliveryAddress: {
+  deliveryAddress?: {
     street: string;
     apartment?: string;
     city: string;
     postalCode: string;
     distanceMiles: number; // Enforces 3.0-mile limit
     deliveryNotes?: string;
-  };
+  } | null;
   items: OrderItem[];
   subtotal: number;
   deliveryFee: number;

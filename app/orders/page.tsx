@@ -71,17 +71,21 @@ export default function OrdersPage() {
 
   // Filter & Sort
   const filteredOrders = useMemo(() => {
+    const seen = new Set<string>();
     return orders
       .filter((order) => {
+        const key = order.id || (order as any)._id;
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
         if (activeTab !== 'all' && order.orderStatus !== activeTab) return false;
         if (paymentFilter !== 'all' && order.paymentMethod !== paymentFilter) return false;
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
-          const matchId = order.id.toLowerCase().includes(q);
-          const matchBarcode = order.barcodeId.toLowerCase().includes(q);
-          const matchName = order.customerName.toLowerCase().includes(q);
-          const matchPhone = order.customerPhone.toLowerCase().includes(q);
-          const matchStreet = order.deliveryAddress.street.toLowerCase().includes(q);
+          const matchId = (order.id || '').toLowerCase().includes(q);
+          const matchBarcode = (order.barcodeId || '').toLowerCase().includes(q);
+          const matchName = (order.customerName || '').toLowerCase().includes(q);
+          const matchPhone = (order.customerPhone || '').toLowerCase().includes(q);
+          const matchStreet = order.deliveryAddress?.street ? order.deliveryAddress.street.toLowerCase().includes(q) : false;
           if (!matchId && !matchBarcode && !matchName && !matchPhone && !matchStreet) return false;
         }
         return true;
@@ -219,9 +223,9 @@ export default function OrdersPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredOrders.map((order) => (
+                  filteredOrders.map((order, idx) => (
                     <tr
-                      key={order.id}
+                      key={order.id || (order as any)._id || `order-${idx}`}
                       className="hover:bg-amber-50/20 transition-colors group cursor-pointer"
                       onClick={() => setSelectedOrder(order)}
                     >
@@ -241,10 +245,10 @@ export default function OrdersPage() {
                           {order.customerName}
                         </span>
                         <span className="text-xs text-slate-500 block truncate">
-                          {order.deliveryAddress.street}, {order.deliveryAddress.city}
+                          {order.deliveryAddress?.street ? `${order.deliveryAddress.street}, ${order.deliveryAddress.city}` : 'Store Pickup (Walk-in)'}
                         </span>
                         <span className="text-[11px] text-slate-400">
-                          {order.customerPhone} ({order.deliveryAddress.distanceMiles} mi)
+                          {order.customerPhone} {order.deliveryAddress?.distanceMiles != null ? `(${order.deliveryAddress.distanceMiles} mi)` : ''}
                         </span>
                       </td>
 
@@ -454,12 +458,20 @@ export default function OrdersPage() {
 
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                   <span className="text-xs font-semibold text-slate-500 block mb-0.5">
-                    Delivery Address ({selectedOrder.deliveryAddress.distanceMiles} Miles from Kitchen)
+                    {selectedOrder.deliveryAddress
+                      ? `Delivery Address (${selectedOrder.deliveryAddress.distanceMiles ?? 0} Miles from Kitchen)`
+                      : 'Order Fulfillment: In-Store Pickup'}
                   </span>
                   <p className="text-slate-800 font-medium">
-                    {selectedOrder.deliveryAddress.street}
-                    {selectedOrder.deliveryAddress.apartment ? `, Apt ${selectedOrder.deliveryAddress.apartment}` : ''}
-                    , {selectedOrder.deliveryAddress.city} {selectedOrder.deliveryAddress.postalCode}
+                    {selectedOrder.deliveryAddress?.street ? (
+                      <>
+                        {selectedOrder.deliveryAddress.street}
+                        {selectedOrder.deliveryAddress.apartment ? `, Apt ${selectedOrder.deliveryAddress.apartment}` : ''}
+                        , {selectedOrder.deliveryAddress.city} {selectedOrder.deliveryAddress.postalCode}
+                      </>
+                    ) : (
+                      'Customer Pickup • Tropical Gyros Flagship (Rosetta St & Mackey St)'
+                    )}
                   </p>
                 </div>
 

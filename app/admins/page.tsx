@@ -76,7 +76,10 @@ export default function AdminsPage() {
     }
   };
 
-  const filteredAdmins = admins.filter((admin) => {
+  const filteredAdmins = admins.filter((admin, index, self) => {
+    if (self.findIndex((a) => (a.id || (a as any)._id) === (admin.id || (admin as any)._id)) !== index) {
+      return false;
+    }
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -235,8 +238,8 @@ export default function AdminsPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredAdmins.map((admin) => (
-                    <tr key={admin.id} className="hover:bg-slate-50/70 transition-colors">
+                  filteredAdmins.map((admin, idx) => (
+                    <tr key={admin.id || (admin as any)._id || `admin-${idx}`} className="hover:bg-slate-50/70 transition-colors">
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center border border-slate-200 text-xs">

@@ -514,7 +514,7 @@ export default function DeliveryStaffPage() {
                     >
                       <div>
                         <span className="font-bold text-slate-900 block">{order.id}</span>
-                        <span className="text-slate-500">{order.customerName} • {order.deliveryAddress.street}</span>
+                        <span className="text-slate-500">{order.customerName} • {order.deliveryAddress?.street || 'Store Pickup'}</span>
                       </div>
                       <span className="font-bold text-amber-800">{formatCurrency(order.total)}</span>
                     </div>

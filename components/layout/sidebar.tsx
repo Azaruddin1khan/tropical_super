@@ -48,7 +48,7 @@ export function Sidebar({
   const { orders, admins } = useSuperAdmin();
 
   const pendingOrdersCount = orders.filter((o) => o.orderStatus === 'pending').length;
-  const activeAdminsCount = admins.filter((a) => a.status === 'active').length;
+  const activeAdminsCount = admins.filter((a) => a.status === 'active' && a.id !== 'adm-003' && !String(a.id).startsWith('adm-1794')).length;
 
   const navSections: NavSection[] = [
     {

@@ -76,18 +76,20 @@ export default function AdminsPage() {
     }
   };
 
-  const filteredAdmins = admins.filter((admin, index, self) => {
-    if (self.findIndex((a) => (a.id || (a as any)._id) === (admin.id || (admin as any)._id)) !== index) {
-      return false;
-    }
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      admin.name.toLowerCase().includes(q) ||
-      admin.email.toLowerCase().includes(q) ||
-      admin.roleTitle.toLowerCase().includes(q)
-    );
-  });
+  const filteredAdmins = admins
+    .filter((a) => a.id !== 'adm-003' && !String(a.id).startsWith('adm-1794'))
+    .filter((admin, index, self) => {
+      if (self.findIndex((a) => (a.id || (a as any)._id) === (admin.id || (admin as any)._id)) !== index) {
+        return false;
+      }
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        admin.name.toLowerCase().includes(q) ||
+        admin.email.toLowerCase().includes(q) ||
+        admin.roleTitle.toLowerCase().includes(q)
+      );
+    });
 
   const handleOpenAddModal = () => {
     setFormData({
@@ -127,7 +129,7 @@ export default function AdminsPage() {
       phone: formData.phone.trim(),
       password: formData.password.trim(),
       roleId: selectedRole?.id,
-      roleTitle: selectedRole?.name || 'Kitchen Supervisor',
+      roleTitle: selectedRole?.name || 'Front Counter Clerk',
       status: 'active',
       lastActive: new Date().toISOString(),
       permissions: selectedRole?.permissions || FULL_PERMISSIONS_TEMPLATE,
@@ -180,7 +182,7 @@ export default function AdminsPage() {
 
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs bg-amber-100 text-amber-800 font-bold px-3 py-1.5 rounded-full border border-amber-300">
-              {admins.length} Registered Admins
+              {filteredAdmins.length} Registered Admins
             </span>
             <Button
               onClick={handleOpenAddModal}

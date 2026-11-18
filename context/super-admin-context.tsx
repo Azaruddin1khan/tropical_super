@@ -158,7 +158,20 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     try {
       const savedAdmins = localStorage.getItem('tg_super_admins');
-      if (savedAdmins) setAdmins(dedupeById(JSON.parse(savedAdmins)));
+      if (savedAdmins) {
+        const parsed = dedupeById(JSON.parse(savedAdmins)).filter(
+          (a: any) => a.id !== 'adm-003' && !String(a.id).startsWith('adm-1794')
+        );
+        if (parsed.length > 0) setAdmins(parsed);
+      }
+
+      const savedRoles = localStorage.getItem('tg_super_roles');
+      if (savedRoles) {
+        const parsed = dedupeById(JSON.parse(savedRoles)).filter(
+          (r: any) => r.id === 'role-front-desk' || r.id === 'role-kitchen-lead'
+        );
+        if (parsed.length > 0) setRoles(parsed);
+      }
 
       const savedOrders = localStorage.getItem('tg_super_orders');
       if (savedOrders) setOrders(dedupeById(JSON.parse(savedOrders)));
@@ -248,6 +261,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     try {
       localStorage.setItem('tg_super_admins', JSON.stringify(admins));
+      localStorage.setItem('tg_super_roles', JSON.stringify(roles));
       localStorage.setItem('tg_super_orders', JSON.stringify(orders));
       localStorage.setItem('tg_super_products', JSON.stringify(products));
       localStorage.setItem('tg_super_categories', JSON.stringify(categories));

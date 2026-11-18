@@ -32,12 +32,14 @@ function PermissionsContent() {
 
   const { admins, updateAdminPermissions } = useSuperAdmin();
 
+  const validAdmins = admins.filter((a) => a.id !== 'adm-003' && !String(a.id).startsWith('adm-1794'));
+
   // Selected Admin Account
   const [selectedAdminId, setSelectedAdminId] = useState<string>(
-    requestedAdminId || (admins[0]?.id ?? '')
+    requestedAdminId || (validAdmins[0]?.id ?? '')
   );
 
-  const selectedAdmin = admins.find((a) => a.id === selectedAdminId) || admins[0];
+  const selectedAdmin = validAdmins.find((a) => a.id === selectedAdminId) || validAdmins[0];
 
   // Working state for active permissions
   const [workingPermissions, setWorkingPermissions] = useState<AdminPermissions>(
@@ -130,7 +132,7 @@ function PermissionsContent() {
                 onChange={(e) => setSelectedAdminId(e.target.value)}
                 className="h-10 px-3 py-1 text-sm font-bold bg-white border border-slate-300 rounded-lg text-slate-900 shadow-xs focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
               >
-                {admins.map((admin) => (
+                {validAdmins.map((admin) => (
                   <option key={admin.id} value={admin.id}>
                     {admin.name} — {admin.roleTitle} ({admin.status.toUpperCase()})
                   </option>

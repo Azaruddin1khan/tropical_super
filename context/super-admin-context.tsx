@@ -159,7 +159,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
     try {
       const savedAdmins = localStorage.getItem('tg_super_admins');
       if (savedAdmins) {
-        const parsed = dedupeById(JSON.parse(savedAdmins)).filter(
+        const parsed = dedupeById<AdminAccount>(JSON.parse(savedAdmins)).filter(
           (a: any) =>
             a.id !== 'adm-003' &&
             !String(a.id).startsWith('adm-1794') &&
@@ -175,30 +175,43 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
 
       const savedRoles = localStorage.getItem('tg_super_roles');
       if (savedRoles) {
-        const parsed = dedupeById(JSON.parse(savedRoles)).filter(
+        const parsed = dedupeById<CustomRole>(JSON.parse(savedRoles)).filter(
           (r: any) => r.id === 'role-front-desk' || r.id === 'role-kitchen-lead'
         );
         if (parsed.length > 0) setRoles(parsed);
       }
 
       const savedOrders = localStorage.getItem('tg_super_orders');
-      if (savedOrders) setOrders(dedupeById(JSON.parse(savedOrders)));
+      if (savedOrders) setOrders(dedupeById<Order>(JSON.parse(savedOrders)));
 
       const savedProducts = localStorage.getItem('tg_super_products');
-      if (savedProducts) setProducts(dedupeById(JSON.parse(savedProducts)));
+      if (savedProducts) {
+        const parsed = dedupeById<Product>(JSON.parse(savedProducts));
+        // Clear stale dummy mock data (e.g. prod-1, cat-1, or obsolete 6-item catalog)
+        if (parsed.some((p: any) => p.id === 'prod-1' || p.categoryId === 'cat-1') || parsed.length < 10) {
+          localStorage.removeItem('tg_super_products');
+        } else {
+          setProducts(parsed);
+        }
+      }
 
       const savedCategories = localStorage.getItem('tg_super_categories');
       if (savedCategories) {
-        const parsed = dedupeById(JSON.parse(savedCategories));
-        categoriesRef.current = parsed;
-        setCategories(parsed);
+        const parsed = dedupeById<Category>(JSON.parse(savedCategories));
+        // Clear stale dummy categories (e.g. cat-1)
+        if (parsed.some((c: any) => c.id === 'cat-1')) {
+          localStorage.removeItem('tg_super_categories');
+        } else {
+          categoriesRef.current = parsed;
+          setCategories(parsed);
+        }
       }
 
       const savedDrivers = localStorage.getItem('tg_super_drivers');
-      if (savedDrivers) setDrivers(dedupeById(JSON.parse(savedDrivers)));
+      if (savedDrivers) setDrivers(dedupeById<DeliveryStaff>(JSON.parse(savedDrivers)));
 
       const savedCustomers = localStorage.getItem('tg_super_customers');
-      if (savedCustomers) setCustomers(dedupeById(JSON.parse(savedCustomers)));
+      if (savedCustomers) setCustomers(dedupeById<Customer>(JSON.parse(savedCustomers)));
 
       const savedLogs = localStorage.getItem('tg_super_logs');
       if (savedLogs) setActivityLogs(JSON.parse(savedLogs));
@@ -233,7 +246,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
         ]);
 
         if (adminsRes.status === 'fulfilled' && adminsRes.value.success && Array.isArray(adminsRes.value.data) && adminsRes.value.data.length > 0) {
-          const sanitizedAdmins = dedupeById(adminsRes.value.data).filter(
+          const sanitizedAdmins = dedupeById<AdminAccount>(adminsRes.value.data).filter(
             (a: any) =>
               a.id !== 'adm-003' &&
               !String(a.id).startsWith('adm-1794') &&
@@ -249,27 +262,38 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
           }
         }
         if (rolesRes.status === 'fulfilled' && rolesRes.value.success && Array.isArray(rolesRes.value.data) && rolesRes.value.data.length > 0) {
-          const sanitizedRoles = dedupeById(rolesRes.value.data).filter(
+          const sanitizedRoles = dedupeById<CustomRole>(rolesRes.value.data).filter(
             (r: any) => r.id === 'role-front-desk' || r.id === 'role-kitchen-lead'
           );
           setRoles(sanitizedRoles);
         }
         if (ordersRes.status === 'fulfilled' && ordersRes.value.success && Array.isArray(ordersRes.value.data) && ordersRes.value.data.length > 0) {
-          setOrders(dedupeById(ordersRes.value.data));
+          const ords = dedupeById<Order>(ordersRes.value.data);
+          setOrders(ords);
+          try {
+            localStorage.setItem('tg_super_orders', JSON.stringify(ords));
+          } catch {}
         }
         if (productsRes.status === 'fulfilled' && productsRes.value.success && Array.isArray(productsRes.value.data) && productsRes.value.data.length > 0) {
-          setProducts(dedupeById(productsRes.value.data));
+          const prods = dedupeById<Product>(productsRes.value.data);
+          setProducts(prods);
+          try {
+            localStorage.setItem('tg_super_products', JSON.stringify(prods));
+          } catch {}
         }
         if (categoriesRes.status === 'fulfilled' && categoriesRes.value.success && Array.isArray(categoriesRes.value.data) && categoriesRes.value.data.length > 0) {
-          const uniqueCats = dedupeById(categoriesRes.value.data);
+          const uniqueCats = dedupeById<Category>(categoriesRes.value.data);
           categoriesRef.current = uniqueCats;
           setCategories(uniqueCats);
+          try {
+            localStorage.setItem('tg_super_categories', JSON.stringify(uniqueCats));
+          } catch {}
         }
         if (driversRes.status === 'fulfilled' && driversRes.value.success && Array.isArray(driversRes.value.data) && driversRes.value.data.length > 0) {
-          setDrivers(dedupeById(driversRes.value.data));
+          setDrivers(dedupeById<DeliveryStaff>(driversRes.value.data));
         }
         if (customersRes.status === 'fulfilled' && customersRes.value.success && Array.isArray(customersRes.value.data) && customersRes.value.data.length > 0) {
-          setCustomers(dedupeById(customersRes.value.data));
+          setCustomers(dedupeById<Customer>(customersRes.value.data));
         }
         if (settingsRes.status === 'fulfilled' && settingsRes.value.success && settingsRes.value.data) {
           setSettings(settingsRes.value.data);

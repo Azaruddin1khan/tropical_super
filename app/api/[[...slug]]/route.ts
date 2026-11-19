@@ -39,9 +39,9 @@ function dedupeById<T extends { id?: string; _id?: any }>(items: T[]): T[] {
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ slug: string[] }> }
+  context: { params: Promise<{ slug?: string[] }> }
 ) {
-  const { slug } = await context.params;
+  const { slug = [] } = (await context.params) || {};
   const path = slug.join('/');
   const searchParams = request.nextUrl.searchParams;
 
@@ -207,9 +207,9 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ slug: string[] }> }
+  context: { params: Promise<{ slug?: string[] }> }
 ) {
-  const { slug } = await context.params;
+  const { slug = [] } = (await context.params) || {};
   const path = slug.join('/');
 
   try {
@@ -254,9 +254,9 @@ export async function POST(
 
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ slug: string[] }> }
+  context: { params: Promise<{ slug?: string[] }> }
 ) {
-  const { slug } = await context.params;
+  const { slug = [] } = (await context.params) || {};
   const path = slug.join('/');
 
   try {
@@ -302,9 +302,9 @@ export async function PUT(
 
 export async function PATCH(
   request: NextRequest,
-  context: { params: Promise<{ slug: string[] }> }
+  context: { params: Promise<{ slug?: string[] }> }
 ) {
-  const { slug } = await context.params;
+  const { slug = [] } = (await context.params) || {};
   const path = slug.join('/');
 
   try {
@@ -384,9 +384,9 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ slug: string[] }> }
+  context: { params: Promise<{ slug?: string[] }> }
 ) {
-  const { slug } = await context.params;
+  const { slug = [] } = (await context.params) || {};
   const path = slug.join('/');
 
   try {

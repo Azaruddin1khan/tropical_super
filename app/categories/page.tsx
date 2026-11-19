@@ -286,7 +286,7 @@ export default function CategoriesPage() {
               label="Display Order"
               type="number"
               placeholder="1"
-              value={formData.displayOrder.toString()}
+              value={(formData.displayOrder ?? 1).toString()}
               onChange={(e) =>
                 setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 1 })
               }

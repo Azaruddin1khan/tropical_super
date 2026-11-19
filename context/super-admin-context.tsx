@@ -160,9 +160,17 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
       const savedAdmins = localStorage.getItem('tg_super_admins');
       if (savedAdmins) {
         const parsed = dedupeById(JSON.parse(savedAdmins)).filter(
-          (a: any) => a.id !== 'adm-003' && !String(a.id).startsWith('adm-1794')
+          (a: any) =>
+            a.id !== 'adm-003' &&
+            !String(a.id).startsWith('adm-1794') &&
+            a.roleTitle !== 'Store Supervisor' &&
+            !String(a.name).toLowerCase().includes('michael strachan') &&
+            (a.roleTitle === 'Front Counter Clerk' || a.roleTitle === 'Kitchen & Dispatch Lead')
         );
-        if (parsed.length > 0) setAdmins(parsed);
+        if (parsed.length > 0) {
+          setAdmins(parsed);
+          localStorage.setItem('tg_super_admins', JSON.stringify(parsed));
+        }
       }
 
       const savedRoles = localStorage.getItem('tg_super_roles');
@@ -225,10 +233,26 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
         ]);
 
         if (adminsRes.status === 'fulfilled' && adminsRes.value.success && Array.isArray(adminsRes.value.data) && adminsRes.value.data.length > 0) {
-          setAdmins(dedupeById(adminsRes.value.data));
+          const sanitizedAdmins = dedupeById(adminsRes.value.data).filter(
+            (a: any) =>
+              a.id !== 'adm-003' &&
+              !String(a.id).startsWith('adm-1794') &&
+              a.roleTitle !== 'Store Supervisor' &&
+              !String(a.name).toLowerCase().includes('michael strachan') &&
+              (a.roleTitle === 'Front Counter Clerk' || a.roleTitle === 'Kitchen & Dispatch Lead')
+          );
+          if (sanitizedAdmins.length > 0) {
+            setAdmins(sanitizedAdmins);
+            try {
+              localStorage.setItem('tg_super_admins', JSON.stringify(sanitizedAdmins));
+            } catch {}
+          }
         }
         if (rolesRes.status === 'fulfilled' && rolesRes.value.success && Array.isArray(rolesRes.value.data) && rolesRes.value.data.length > 0) {
-          setRoles(dedupeById(rolesRes.value.data));
+          const sanitizedRoles = dedupeById(rolesRes.value.data).filter(
+            (r: any) => r.id === 'role-front-desk' || r.id === 'role-kitchen-lead'
+          );
+          setRoles(sanitizedRoles);
         }
         if (ordersRes.status === 'fulfilled' && ordersRes.value.success && Array.isArray(ordersRes.value.data) && ordersRes.value.data.length > 0) {
           setOrders(dedupeById(ordersRes.value.data));

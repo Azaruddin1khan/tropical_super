@@ -76,8 +76,17 @@ export default function AdminsPage() {
     }
   };
 
+  const ALLOWED_ROLES = ['Front Counter Clerk', 'Kitchen & Dispatch Lead'];
+
   const filteredAdmins = admins
-    .filter((a) => a.id !== 'adm-003' && !String(a.id).startsWith('adm-1794'))
+    .filter(
+      (a) =>
+        a.id !== 'adm-003' &&
+        !String(a.id).startsWith('adm-1794') &&
+        a.roleTitle !== 'Store Supervisor' &&
+        !String(a.name).toLowerCase().includes('michael strachan') &&
+        ALLOWED_ROLES.includes(a.roleTitle)
+    )
     .filter((admin, index, self) => {
       if (self.findIndex((a) => (a.id || (a as any)._id) === (admin.id || (admin as any)._id)) !== index) {
         return false;

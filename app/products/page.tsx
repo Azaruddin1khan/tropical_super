@@ -529,7 +529,7 @@ export default function ProductsPage() {
 
               <Select
                 label="Spiciness Level"
-                value={formData.spicyLevel.toString()}
+                value={(formData.spicyLevel ?? 0).toString()}
                 onChange={(e) =>
                   setFormData({ ...formData, spicyLevel: parseInt(e.target.value) || 0 })
                 }

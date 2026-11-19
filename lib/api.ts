@@ -6,9 +6,9 @@
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ||
-  (typeof window !== 'undefined' && window.location.hostname === 'localhost'
-    ? 'http://localhost:5001'
-    : 'https://jennifer-manchester-robust-pleasant.trycloudflare.com');
+  (typeof window !== 'undefined'
+    ? `http://${window.location.hostname}:5001`
+    : 'http://localhost:5001');
 
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<{ success: boolean; data?: T; error?: string }> {
   try {

@@ -28,8 +28,8 @@ import {
 } from '@/data/nassau-route';
 import 'leaflet/dist/leaflet.css';
 
-// Official Nassau Flagship Coordinates (Rosetta St & Mackey St, Palmdale, Nassau, Bahamas)
-const STORE_LOCATION: [number, number] = [25.0675, -77.3245]; // Tropical Gyros Flagship
+// Official Nassau Flagship Coordinates (Rosetta St, Palmdale, Nassau, Bahamas)
+const STORE_LOCATION: [number, number] = [25.068135, -77.327188]; // Tropical Gyros Flagship
 const DELIVERY_RADIUS_METERS = 4828; // Strict 3.0-mile boundary (1609.34m * 3)
 
 interface DriverTelemetry {

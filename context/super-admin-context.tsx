@@ -697,12 +697,38 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
     }
   };
 
-  const toggleCategoryActive = (categoryId: string) => {
+  const toggleCategoryActive = async (categoryId: string) => {
+    const target = categoriesRef.current.find((c) => c.id === categoryId);
+    if (!target) return;
+    const nextState = !target.isActive;
+
     categoriesRef.current = categoriesRef.current.map((c) =>
-      c.id === categoryId ? { ...c, isActive: !c.isActive } : c
+      c.id === categoryId ? { ...c, isActive: nextState } : c
     );
-    setCategories(categoriesRef.current);
-    SuperAdminApi.toggleCategoryActive(categoryId).catch(() => {});
+    setCategories([...categoriesRef.current]);
+
+    try {
+      const res = await SuperAdminApi.toggleCategoryActive(categoryId);
+      if (res && res.success) {
+        showToast(
+          nextState ? 'Category Published' : 'Category Hidden',
+          `"${target.name}" is now ${nextState ? 'published' : 'hidden'} across web & mobile apps.`,
+          'success'
+        );
+      } else {
+        categoriesRef.current = categoriesRef.current.map((c) =>
+          c.id === categoryId ? { ...c, isActive: !nextState } : c
+        );
+        setCategories([...categoriesRef.current]);
+        showToast('Sync Notice', res?.error || 'Failed to update category state in live database', 'error');
+      }
+    } catch (e: any) {
+      categoriesRef.current = categoriesRef.current.map((c) =>
+        c.id === categoryId ? { ...c, isActive: !nextState } : c
+      );
+      setCategories([...categoriesRef.current]);
+      showToast('Network Error', e?.message || 'Could not connect to database', 'error');
+    }
   };
 
   // ==========================================

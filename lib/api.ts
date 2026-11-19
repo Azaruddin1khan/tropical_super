@@ -4,11 +4,7 @@
  * with fallback to local state for zero downtime.
  */
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ||
-  (typeof window !== 'undefined'
-    ? `http://${window.location.hostname}:5001`
-    : 'http://localhost:5001');
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<{ success: boolean; data?: T; error?: string }> {
   try {

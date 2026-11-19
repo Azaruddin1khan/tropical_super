@@ -34,7 +34,7 @@ const CATEGORY_IMAGE_PRESETS = [
 ];
 
 export default function CategoriesPage() {
-  const { categories, products, addCategory, editCategory, deleteCategory } = useSuperAdmin();
+  const { categories, products, addCategory, editCategory, deleteCategory, toggleCategoryActive } = useSuperAdmin();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -76,12 +76,6 @@ export default function CategoriesPage() {
     setDuplicateWarning(null);
   };
 
-  const toggleCategoryActive = (categoryId: string) => {
-    const cat = categories.find((c) => c.id === categoryId);
-    if (cat) {
-      editCategory({ ...cat, isActive: !cat.isActive });
-    }
-  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();

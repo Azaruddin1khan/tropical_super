@@ -8,7 +8,7 @@ import {
   initialCustomers,
   initialAdminAccounts,
   initialCustomRoles,
-  initialRestaurantSettings,
+  initialSettings,
 } from '@/data/mock-data';
 
 function corsHeaders() {
@@ -26,11 +26,11 @@ export async function OPTIONS() {
   });
 }
 
-function dedupeById<T extends { id?: string; _id?: any }>(items: T[]): T[] {
+function dedupeById(items: any[]): any[] {
   if (!Array.isArray(items)) return [];
   const seen = new Set<string>();
   return items.filter((item) => {
-    const key = item?.id || String(item?._id);
+    const key = item?.id || (item?._id ? String(item._id) : undefined);
     if (!key || seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -161,7 +161,7 @@ export async function GET(
       const col = db.collection('settings');
       let settings = await col.findOne({ id: 'main_restaurant_settings' });
       if (!settings) {
-        settings = (await col.findOne({})) || (initialRestaurantSettings as any);
+        settings = (await col.findOne({})) || (initialSettings as any);
       }
       return NextResponse.json(
         { success: true, data: settings },

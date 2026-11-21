@@ -80,9 +80,19 @@ export async function GET(
 
       let items = await col.find(query).toArray();
       if (!items || items.length === 0) {
-        items = initialProducts as any;
-        if (categoryId && categoryId !== 'all') {
-          items = items.filter((p: any) => p.categoryId === categoryId);
+        try {
+          const totalInDb = await col.countDocuments();
+          if (totalInDb === 0) {
+            await col.insertMany(initialProducts.map((p) => ({ ...p })));
+            items = await col.find(query).toArray();
+          }
+        } catch (_) {}
+
+        if (!items || items.length === 0) {
+          items = initialProducts as any;
+          if (categoryId && categoryId !== 'all') {
+            items = items.filter((p: any) => p.categoryId === categoryId);
+          }
         }
       }
       return NextResponse.json(
@@ -276,6 +286,9 @@ export async function PUT(
     if (slug[1] === 'products' && slug[2]) {
       const id = slug[2];
       const col = db.collection('products');
+      if (body.price !== undefined) {
+        body.price = typeof body.price === 'number' ? body.price : parseFloat(body.price) || 0;
+      }
       await col.updateOne({ id }, { $set: body }, { upsert: true });
       const updated = await col.findOne({ id });
       return NextResponse.json({ success: true, data: updated }, { headers: corsHeaders() });

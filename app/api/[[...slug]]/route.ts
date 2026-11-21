@@ -102,9 +102,20 @@ export async function GET(
     }
 
     // 4. Orders
-    if (path === 'superadmin/orders' || path === 'admin/orders') {
+    if (
+      path === 'customer/orders' ||
+      path === 'superadmin/orders' ||
+      path === 'admin/orders' ||
+      path === 'orders'
+    ) {
       const col = db.collection('orders');
-      let items = await col.find({}).sort({ createdAt: -1 }).toArray();
+      const email = searchParams.get('email');
+      const phone = searchParams.get('phone');
+      const query: any = {};
+      if (email) query.customerEmail = email;
+      if (phone) query.customerPhone = phone;
+
+      let items = await col.find(query).sort({ createdAt: -1 }).toArray();
       if (!items || items.length === 0) {
         items = initialOrders as any;
       }
@@ -112,6 +123,22 @@ export async function GET(
         { success: true, data: dedupeById(items) },
         { headers: corsHeaders() }
       );
+    }
+
+    if (
+      path.startsWith('customer/orders/') ||
+      path.startsWith('superadmin/orders/') ||
+      path.startsWith('admin/orders/')
+    ) {
+      const parts = path.split('/');
+      const orderId = parts[parts.length - 1];
+      const col = db.collection('orders');
+      const order = await col.findOne({ id: orderId });
+      if (order) {
+        return NextResponse.json({ success: true, data: order, order }, { headers: corsHeaders() });
+      }
+      const fallback = initialOrders.find((o) => o.id === orderId);
+      return NextResponse.json({ success: true, data: fallback, order: fallback }, { headers: corsHeaders() });
     }
 
     // 5. Admins
@@ -248,6 +275,97 @@ export async function POST(
       };
       await col.updateOne({ id: newProd.id }, { $set: newProd }, { upsert: true });
       return NextResponse.json({ success: true, data: newProd }, { status: 201, headers: corsHeaders() });
+    }
+
+    // Orders placement (Customer App & Admin)
+    if (
+      path === 'customer/orders' ||
+      path === 'orders' ||
+      path === 'admin/orders' ||
+      path === 'superadmin/orders'
+    ) {
+      const col = db.collection('orders');
+      const { _id, ...cleanBody } = body;
+      const orderId =
+        cleanBody.orderId ||
+        cleanBody.id ||
+        `TRP-${Math.floor(100000 + Math.random() * 900000)}`;
+
+      const normalizedItems = (Array.isArray(cleanBody.items) ? cleanBody.items : []).map((i: any) => {
+        if (i.food) {
+          return {
+            id: i.food.id || `item_${Date.now()}`,
+            productId: i.food.id || 'prod-1',
+            productName: i.food.name || 'Tropical Gyros Dish',
+            price: Number(i.food.price) || 0,
+            quantity: Number(i.quantity) || 1,
+            imageUrl: i.food.imageUrl || '/images/gyro_with_fries.jpg',
+            specialInstructions: i.specialInstructions || '',
+            food: i.food,
+          };
+        }
+        return {
+          id: i.id || i.productId || `item_${Date.now()}`,
+          productId: i.productId || 'prod-1',
+          productName: i.productName || i.name || 'Tropical Gyros Dish',
+          price: Number(i.price) || 0,
+          quantity: Number(i.quantity) || 1,
+          imageUrl: i.imageUrl || '/images/gyro_with_fries.jpg',
+          specialInstructions: i.specialInstructions || '',
+        };
+      });
+
+      const recipientName =
+        cleanBody.customerName ||
+        cleanBody.deliveryAddress?.recipientName ||
+        'Alex Rivera';
+      const recipientPhone =
+        cleanBody.customerPhone ||
+        cleanBody.deliveryAddress?.phone ||
+        '+1 (242) 555-0199';
+
+      const newOrder = {
+        id: orderId,
+        orderId: orderId,
+        customerName: recipientName,
+        customerEmail: cleanBody.customerEmail || 'customer@tropicalgyros.com',
+        customerPhone: recipientPhone,
+        fulfillmentType: cleanBody.fulfillmentType || 'delivery',
+        deliveryAddress: cleanBody.deliveryAddress || {
+          street: '14 Rosetta Street',
+          city: 'Palmdale, Nassau',
+          postalCode: 'N-4832',
+          distanceMiles: 1.2,
+          latitude: 25.0670,
+          longitude: -77.3230,
+        },
+        deliveryInstructions: cleanBody.deliveryInstructions || '',
+        items: normalizedItems,
+        subtotal: Number(cleanBody.subtotal) || 0,
+        deliveryFee: Number(cleanBody.deliveryFee) || 0,
+        tax: Number(cleanBody.tax) || 0,
+        platformFee: Number(cleanBody.platformFee) || 0,
+        discount: Number(cleanBody.discount) || 0,
+        total: Number(cleanBody.total) || 0,
+        paymentMethod: cleanBody.paymentMethod || 'card',
+        paymentStatus: cleanBody.isPaid ? 'paid' : (cleanBody.paymentStatus || 'pending'),
+        orderStatus: 'processing',
+        status: 'processing',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        assignedDriverId: cleanBody.assignedDriverId || 'drv-01',
+        assignedDriverName: cleanBody.assignedDriverName || 'Leo Santos (Tropical Courier)',
+        estimatedDeliveryTime: cleanBody.estimatedDeliveryTime || '25-35 mins',
+        barcodeValue: cleanBody.barcodeValue || `${orderId}-BC`,
+        qrCodeValue: cleanBody.qrCodeValue || `https://tropicalgyros.demo/order/${orderId}`,
+      };
+
+      await col.updateOne({ id: orderId }, { $set: newOrder }, { upsert: true });
+
+      return NextResponse.json(
+        { success: true, order: newOrder, data: newOrder },
+        { status: 201, headers: corsHeaders() }
+      );
     }
 
     return NextResponse.json(

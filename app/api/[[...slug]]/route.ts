@@ -277,7 +277,9 @@ export async function PUT(
     if (slug[1] === 'categories' && slug[2]) {
       const id = slug[2];
       const col = db.collection('categories');
-      await col.updateOne({ id }, { $set: body }, { upsert: true });
+      const { _id, ...cleanData } = body;
+      cleanData.id = id;
+      await col.updateOne({ id }, { $set: cleanData }, { upsert: true });
       const updated = await col.findOne({ id });
       return NextResponse.json({ success: true, data: updated }, { headers: corsHeaders() });
     }
@@ -286,10 +288,12 @@ export async function PUT(
     if (slug[1] === 'products' && slug[2]) {
       const id = slug[2];
       const col = db.collection('products');
-      if (body.price !== undefined) {
-        body.price = typeof body.price === 'number' ? body.price : parseFloat(body.price) || 0;
+      const { _id, ...cleanData } = body;
+      if (cleanData.price !== undefined) {
+        cleanData.price = typeof cleanData.price === 'number' ? cleanData.price : parseFloat(cleanData.price) || 0;
       }
-      await col.updateOne({ id }, { $set: body }, { upsert: true });
+      cleanData.id = id;
+      await col.updateOne({ id }, { $set: cleanData }, { upsert: true });
       const updated = await col.findOne({ id });
       return NextResponse.json({ success: true, data: updated }, { headers: corsHeaders() });
     }
@@ -297,8 +301,9 @@ export async function PUT(
     // Update Settings
     if (path === 'superadmin/settings' || path === 'admin/settings') {
       const col = db.collection('settings');
-      await col.updateOne({ id: 'main_restaurant_settings' }, { $set: body }, { upsert: true });
-      return NextResponse.json({ success: true, data: body }, { headers: corsHeaders() });
+      const { _id, ...cleanData } = body;
+      await col.updateOne({ id: 'main_restaurant_settings' }, { $set: cleanData }, { upsert: true });
+      return NextResponse.json({ success: true, data: cleanData }, { headers: corsHeaders() });
     }
 
     return NextResponse.json(

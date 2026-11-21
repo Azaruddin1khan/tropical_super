@@ -588,8 +588,9 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
   };
 
   const editProduct = (product: Product) => {
-    setProducts((prev) => prev.map((p) => (p.id === product.id ? product : p)));
-    SuperAdminApi.updateProduct(product.id, product).catch(() => {});
+    const { _id, ...cleanProduct } = product as any;
+    setProducts((prev) => prev.map((p) => (p.id === product.id ? cleanProduct : p)));
+    SuperAdminApi.updateProduct(product.id, cleanProduct).catch(() => {});
     addActivityLog({
       adminId: 'super-admin-01',
       adminName: 'Super Administrator',

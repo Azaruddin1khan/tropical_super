@@ -46,15 +46,15 @@ export async function GET(
   const searchParams = request.nextUrl.searchParams;
 
   try {
-    const db = await getDb();
-
-    // 1. Health
+    // 1. Health check (Instant response - zero database latency)
     if (path === 'health') {
       return NextResponse.json(
         { success: true, status: 'online', database: 'connected', timestamp: new Date().toISOString() },
         { headers: corsHeaders() }
       );
     }
+
+    const db = await getDb();
 
     // 2. Categories
     if (path === 'superadmin/categories' || path === 'admin/categories') {

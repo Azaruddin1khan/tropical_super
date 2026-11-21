@@ -303,6 +303,24 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
       }
     };
     syncFromBackend();
+
+    // Auto-poll orders every 8 seconds for real-time live order reception
+    const orderPollInterval = setInterval(async () => {
+      try {
+        const ordersRes = await SuperAdminApi.getOrders();
+        if (ordersRes.success && Array.isArray(ordersRes.data) && ordersRes.data.length > 0) {
+          const ords = dedupeById<Order>(ordersRes.data);
+          setOrders((prev) => {
+            if (ords.length !== prev.length || ords[0]?.id !== prev[0]?.id) {
+              return ords;
+            }
+            return prev;
+          });
+        }
+      } catch (_) {}
+    }, 8000);
+
+    return () => clearInterval(orderPollInterval);
   }, []);
 
   // Sync to LocalStorage on changes

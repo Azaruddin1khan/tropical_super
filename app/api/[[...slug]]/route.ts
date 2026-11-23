@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { sendVerificationEmail } from '@/lib/mailer';
 import {
   initialCategories,
   initialProducts,
@@ -687,12 +688,22 @@ export async function POST(
         createdAt: new Date(),
       });
 
+      // Send real verification email via SMTP if credentials are configured
+      const mailResult = await sendVerificationEmail({
+        to: cleanEmail,
+        name: admin.name || 'Admin Staff',
+        otp,
+      }).catch((err) => ({ success: false, error: err?.message }));
+
       return NextResponse.json(
         {
           success: true,
-          message: `Verification code sent to ${cleanEmail}`,
+          message: mailResult.success
+            ? `Verification code has been sent directly to your email: ${cleanEmail}`
+            : `Verification code generated for ${cleanEmail}`,
           otp,
           token,
+          emailSent: Boolean(mailResult.success),
           expiresInMinutes: 15,
         },
         { headers: corsHeaders() }

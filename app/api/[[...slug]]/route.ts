@@ -701,7 +701,6 @@ export async function POST(
           message: mailResult.success
             ? `Verification code has been sent directly to your email: ${cleanEmail}`
             : `Verification code generated for ${cleanEmail}`,
-          otp,
           token,
           emailSent: Boolean(mailResult.success),
           expiresInMinutes: 15,

@@ -819,6 +819,91 @@ export async function POST(
       );
     }
 
+    // Change Password (for logged-in admin user)
+    if (path === 'admin/change-password' || path === 'superadmin/change-password') {
+      const { email, currentPassword, newPassword } = body || {};
+      const cleanEmail = (email || '').trim().toLowerCase();
+
+      if (!cleanEmail) {
+        return NextResponse.json(
+          { success: false, error: 'Email address is required' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      if (!currentPassword) {
+        return NextResponse.json(
+          { success: false, error: 'Current password is required' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      if (!newPassword || newPassword.length < 6) {
+        return NextResponse.json(
+          { success: false, error: 'New password must be at least 6 characters' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      if (currentPassword === newPassword) {
+        return NextResponse.json(
+          { success: false, error: 'New password cannot be the same as your current password' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      const adminsCol = db.collection('admins');
+      let admin: any = await adminsCol.findOne({
+        email: { $regex: new RegExp(`^${cleanEmail}$`, 'i') },
+      });
+
+      if (!admin) {
+        const defaultAdmin = initialAdminAccounts.find((a: any) => a.email.toLowerCase() === cleanEmail);
+        if (defaultAdmin) {
+          admin = {
+            ...defaultAdmin,
+            password: 'Admin@123',
+            createdAt: new Date().toISOString(),
+          };
+          await adminsCol.updateOne({ id: admin.id }, { $set: admin }, { upsert: true });
+        }
+      }
+
+      if (!admin) {
+        return NextResponse.json(
+          { success: false, error: 'No admin account found with this email address' },
+          { status: 404, headers: corsHeaders() }
+        );
+      }
+
+      const expectedPassword = admin.password || 'Admin@123';
+      if (currentPassword !== expectedPassword) {
+        return NextResponse.json(
+          { success: false, error: 'Current password is incorrect. Please try again.' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      // Update password in MongoDB Atlas
+      await adminsCol.updateOne(
+        { email: { $regex: new RegExp(`^${cleanEmail}$`, 'i') } },
+        {
+          $set: {
+            password: newPassword,
+            updatedAt: new Date().toISOString(),
+          },
+        }
+      );
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Password changed successfully! Your credentials have been updated.',
+        },
+        { headers: corsHeaders() }
+      );
+    }
+
     return NextResponse.json(
       { success: false, error: `Route not found: ${path}` },
       { status: 404, headers: corsHeaders() }

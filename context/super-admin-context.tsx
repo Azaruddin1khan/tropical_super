@@ -162,10 +162,8 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
         const parsed = dedupeById<AdminAccount>(JSON.parse(savedAdmins)).filter(
           (a: any) =>
             a.id !== 'adm-003' &&
-            !String(a.id).startsWith('adm-1794') &&
             a.roleTitle !== 'Store Supervisor' &&
-            !String(a.name).toLowerCase().includes('michael strachan') &&
-            (a.roleTitle === 'Front Counter Clerk' || a.roleTitle === 'Kitchen & Dispatch Lead')
+            !String(a.name).toLowerCase().includes('michael strachan')
         );
         if (parsed.length > 0) {
           setAdmins(parsed);
@@ -175,9 +173,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
 
       const savedRoles = localStorage.getItem('tg_super_roles');
       if (savedRoles) {
-        const parsed = dedupeById<CustomRole>(JSON.parse(savedRoles)).filter(
-          (r: any) => r.id === 'role-front-desk' || r.id === 'role-kitchen-lead'
-        );
+        const parsed = dedupeById<CustomRole>(JSON.parse(savedRoles));
         if (parsed.length > 0) setRoles(parsed);
       }
 
@@ -270,10 +266,8 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
           const sanitizedAdmins = dedupeById<AdminAccount>(adminsRes.value.data).filter(
             (a: any) =>
               a.id !== 'adm-003' &&
-              !String(a.id).startsWith('adm-1794') &&
               a.roleTitle !== 'Store Supervisor' &&
-              !String(a.name).toLowerCase().includes('michael strachan') &&
-              (a.roleTitle === 'Front Counter Clerk' || a.roleTitle === 'Kitchen & Dispatch Lead')
+              !String(a.name).toLowerCase().includes('michael strachan')
           );
           if (sanitizedAdmins.length > 0) {
             setAdmins(sanitizedAdmins);
@@ -283,10 +277,11 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
           }
         }
         if (rolesRes.status === 'fulfilled' && rolesRes.value.success && Array.isArray(rolesRes.value.data) && rolesRes.value.data.length > 0) {
-          const sanitizedRoles = dedupeById<CustomRole>(rolesRes.value.data).filter(
-            (r: any) => r.id === 'role-front-desk' || r.id === 'role-kitchen-lead'
-          );
+          const sanitizedRoles = dedupeById<CustomRole>(rolesRes.value.data);
           setRoles(sanitizedRoles);
+          try {
+            localStorage.setItem('tg_super_roles', JSON.stringify(sanitizedRoles));
+          } catch {}
         }
         if (ordersRes.status === 'fulfilled' && ordersRes.value.success && Array.isArray(ordersRes.value.data)) {
           const ords = dedupeById<Order>(ordersRes.value.data);
@@ -366,14 +361,35 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
   // ==========================================
   // ADMIN ACCOUNT ACTIONS
   // ==========================================
-  const addAdmin = (adminData: Omit<AdminAccount, 'id' | 'createdAt'>) => {
+  const addAdmin = async (adminData: Omit<AdminAccount, 'id' | 'createdAt'>) => {
     const newAdmin: AdminAccount = {
       ...adminData,
       id: `adm-${Date.now()}`,
       createdAt: new Date().toISOString(),
     };
-    setAdmins((prev) => [newAdmin, ...prev]);
-    SuperAdminApi.createAdmin(newAdmin).catch(() => {});
+    setAdmins((prev) => {
+      const updated = [newAdmin, ...prev];
+      try {
+        localStorage.setItem('tg_super_admins', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    try {
+      const res = await SuperAdminApi.createAdmin(newAdmin);
+      if (res && res.success && res.data) {
+        setAdmins((prev) => {
+          const updated = prev.map((a) => (a.id === newAdmin.id ? { ...a, ...res.data } : a));
+          try {
+            localStorage.setItem('tg_super_admins', JSON.stringify(updated));
+          } catch {}
+          return updated;
+        });
+      }
+    } catch (e) {
+      console.warn('createAdmin API error:', e);
+    }
+
     addActivityLog({
       adminId: 'super-admin-01',
       adminName: 'Super Administrator',
@@ -385,9 +401,21 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
     showToast('Admin Account Created', `${newAdmin.name} added successfully.`, 'success');
   };
 
-  const editAdmin = (updatedAdmin: AdminAccount) => {
-    setAdmins((prev) => prev.map((a) => (a.id === updatedAdmin.id ? updatedAdmin : a)));
-    SuperAdminApi.updateAdmin(updatedAdmin.id, updatedAdmin).catch(() => {});
+  const editAdmin = async (updatedAdmin: AdminAccount) => {
+    setAdmins((prev) => {
+      const updated = prev.map((a) => (a.id === updatedAdmin.id ? updatedAdmin : a));
+      try {
+        localStorage.setItem('tg_super_admins', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    try {
+      await SuperAdminApi.updateAdmin(updatedAdmin.id, updatedAdmin);
+    } catch (e) {
+      console.warn('updateAdmin API error:', e);
+    }
+
     addActivityLog({
       adminId: 'super-admin-01',
       adminName: 'Super Administrator',
@@ -399,10 +427,9 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
     showToast('Admin Profile Updated', `${updatedAdmin.name} profile saved.`, 'success');
   };
 
-  const toggleAdminStatus = (adminId: string) => {
-    SuperAdminApi.toggleAdminStatus(adminId).catch(() => {});
-    setAdmins((prev) =>
-      prev.map((a) => {
+  const toggleAdminStatus = async (adminId: string) => {
+    setAdmins((prev) => {
+      const updated = prev.map((a) => {
         if (a.id === adminId) {
           const newStatus = a.status === 'active' ? 'inactive' : 'active';
           addActivityLog({
@@ -414,17 +441,26 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
             targetEntity: `Admin: ${a.name}`,
           });
           showToast('Status Updated', `${a.name} is now ${newStatus}.`, 'info');
-          return { ...a, status: newStatus };
+          return { ...a, status: newStatus as 'active' | 'inactive' };
         }
         return a;
-      })
-    );
+      });
+      try {
+        localStorage.setItem('tg_super_admins', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    try {
+      await SuperAdminApi.toggleAdminStatus(adminId);
+    } catch (e) {
+      console.warn('toggleAdminStatus API error:', e);
+    }
   };
 
-  const updateAdminPermissions = (adminId: string, newPermissions: AdminPermissions) => {
-    SuperAdminApi.updateAdminPermissions(adminId, newPermissions).catch(() => {});
-    setAdmins((prev) =>
-      prev.map((a) => {
+  const updateAdminPermissions = async (adminId: string, newPermissions: AdminPermissions) => {
+    setAdmins((prev) => {
+      const updated = prev.map((a) => {
         if (a.id === adminId) {
           addActivityLog({
             adminId: 'super-admin-01',
@@ -438,14 +474,36 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
           return { ...a, permissions: newPermissions };
         }
         return a;
-      })
-    );
+      });
+      try {
+        localStorage.setItem('tg_super_admins', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    try {
+      await SuperAdminApi.updateAdminPermissions(adminId, newPermissions);
+    } catch (e) {
+      console.warn('updateAdminPermissions API error:', e);
+    }
   };
 
-  const deleteAdmin = (adminId: string) => {
-    SuperAdminApi.deleteAdmin(adminId).catch(() => {});
+  const deleteAdmin = async (adminId: string) => {
     const target = admins.find((a) => a.id === adminId);
-    setAdmins((prev) => prev.filter((a) => a.id !== adminId));
+    setAdmins((prev) => {
+      const updated = prev.filter((a) => a.id !== adminId);
+      try {
+        localStorage.setItem('tg_super_admins', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    try {
+      await SuperAdminApi.deleteAdmin(adminId);
+    } catch (e) {
+      console.warn('deleteAdmin API error:', e);
+    }
+
     if (target) {
       addActivityLog({
         adminId: 'super-admin-01',
@@ -468,7 +526,13 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
       id: `role-${Date.now()}`,
       createdAt: new Date().toISOString(),
     };
-    setRoles((prev) => [...prev, newRole]);
+    setRoles((prev) => {
+      const updated = [...prev, newRole];
+      try {
+        localStorage.setItem('tg_super_roles', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
     SuperAdminApi.createRole(newRole).catch(() => {});
     addActivityLog({
       adminId: 'super-admin-01',
@@ -483,7 +547,13 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
   };
 
   const editRole = (updatedRole: CustomRole) => {
-    setRoles((prev) => prev.map((r) => (r.id === updatedRole.id ? updatedRole : r)));
+    setRoles((prev) => {
+      const updated = prev.map((r) => (r.id === updatedRole.id ? updatedRole : r));
+      try {
+        localStorage.setItem('tg_super_roles', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
     SuperAdminApi.updateRole(updatedRole.id, updatedRole).catch(() => {});
     addActivityLog({
       adminId: 'super-admin-01',
@@ -499,7 +569,13 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
   const deleteRole = (roleId: string) => {
     const role = roles.find((r) => r.id === roleId);
     if (!role) return;
-    setRoles((prev) => prev.filter((r) => r.id !== roleId));
+    setRoles((prev) => {
+      const updated = prev.filter((r) => r.id !== roleId);
+      try {
+        localStorage.setItem('tg_super_roles', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
     SuperAdminApi.deleteRole(roleId).catch(() => {});
     addActivityLog({
       adminId: 'super-admin-01',

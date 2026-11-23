@@ -306,6 +306,56 @@ export async function GET(
       );
     }
 
+    // 11. Activity Logs
+    if (path === 'superadmin/activity-logs') {
+      const col = db.collection('activity_logs');
+      const items = await col.find({}).sort({ timestamp: -1 }).limit(100).toArray();
+      return NextResponse.json(
+        { success: true, data: items || [] },
+        { headers: corsHeaders() }
+      );
+    }
+
+    // 12. Payments & Summary
+    if (path === 'superadmin/payments') {
+      const col = db.collection('orders');
+      const orders = await col.find({}).toArray();
+      const payments = (orders || []).map((o: any) => ({
+        id: `pay-${o.id}`,
+        orderId: o.id,
+        customerName: o.customerName || (typeof o.customer === 'object' ? o.customer?.name : o.customer) || 'Customer',
+        amount: Number(o.total ?? o.pricing?.total ?? o.totalBsd) || 0,
+        paymentMethod: o.paymentMethod || 'Credit Card',
+        paymentStatus: o.paymentStatus || (o.isPaid ? 'completed' : 'pending'),
+        createdAt: o.createdAt || new Date().toISOString(),
+      }));
+      return NextResponse.json({ success: true, data: payments }, { headers: corsHeaders() });
+    }
+
+    if (path === 'superadmin/payments/summary') {
+      const col = db.collection('orders');
+      const orders = await col.find({}).toArray();
+      const allOrders = orders || [];
+      const totalVolume = allOrders.reduce((sum: number, o: any) => sum + (Number(o.total ?? o.pricing?.total ?? o.totalBsd) || 0), 0);
+      const codTotal = allOrders
+        .filter((o: any) => String(o.paymentMethod || '').toLowerCase().includes('cash'))
+        .reduce((sum: number, o: any) => sum + (Number(o.total ?? o.pricing?.total ?? o.totalBsd) || 0), 0);
+      const cardTotal = totalVolume - codTotal;
+      return NextResponse.json(
+        {
+          success: true,
+          data: {
+            totalVolume: Number(totalVolume.toFixed(2)),
+            cardTotal: Number(cardTotal.toFixed(2)),
+            codTotal: Number(codTotal.toFixed(2)),
+            settledCount: allOrders.filter((o: any) => o.paymentStatus === 'paid' || o.isPaid).length,
+            pendingCount: allOrders.filter((o: any) => o.paymentStatus !== 'paid' && !o.isPaid).length,
+          },
+        },
+        { headers: corsHeaders() }
+      );
+    }
+
     return NextResponse.json(
       { success: false, error: `Route not found: ${path}` },
       { status: 404, headers: corsHeaders() }
@@ -442,6 +492,105 @@ export async function POST(
         { success: true, order: newOrder, data: newOrder },
         { status: 201, headers: corsHeaders() }
       );
+    }
+
+    // Admins & Staff Creation
+    if (path === 'superadmin/admins' || path === 'admin/admins' || path === 'admin/staff') {
+      const col = db.collection('admins');
+      const { id, name, email, phone, roleId, roleTitle, permissions, password, avatarUrl, status } = body || {};
+      const cleanEmail = (email || '').trim().toLowerCase();
+      if (!cleanEmail || !name) {
+        return NextResponse.json(
+          { success: false, error: 'Admin full name and email are required' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+      const existing = await col.findOne({ email: { $regex: new RegExp(`^${cleanEmail}$`, 'i') } });
+      if (existing) {
+        return NextResponse.json(
+          { success: false, error: 'An admin account with this email already exists' },
+          { status: 409, headers: corsHeaders() }
+        );
+      }
+      const adminId = id || `adm-${Date.now()}`;
+      const newAdmin = {
+        id: adminId,
+        name: name.trim(),
+        email: cleanEmail,
+        phone: (phone || '').trim(),
+        roleId: roleId || 'role-front-desk',
+        roleTitle: roleTitle || 'Front Counter Clerk',
+        status: status || 'active',
+        permissions: permissions || {
+          orders: { view: true, create: true, edit: true, delete: true, updateStatus: true, assignDriver: true },
+          products: { view: true, create: true, edit: true, delete: true, toggleAvailability: true },
+          categories: { view: true, create: true, edit: true, delete: true },
+          payments: { view: true, refund: true, markCodPaid: true, exportReports: true },
+          delivery: { viewFleet: true, reassignOrders: true, manageDrivers: true },
+          customers: { view: true, toggleStatus: true, viewOrderHistory: true },
+          analytics: { viewReports: true, exportData: true },
+          settings: { view: true, editStoreInfo: true, updateGeofence: true, manageStaff: true },
+        },
+        password: password || 'Admin@123',
+        avatarUrl: avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastActive: 'Just now',
+      };
+      await col.updateOne({ id: adminId }, { $set: newAdmin }, { upsert: true });
+      return NextResponse.json(
+        { success: true, data: newAdmin, message: 'Admin account created successfully' },
+        { status: 201, headers: corsHeaders() }
+      );
+    }
+
+    // Custom Roles Creation
+    if (path === 'superadmin/roles' || path === 'admin/roles') {
+      const col = db.collection('roles');
+      const roleId = body.id || `role-${Date.now()}`;
+      const newRole = {
+        ...body,
+        id: roleId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      await col.updateOne({ id: roleId }, { $set: newRole }, { upsert: true });
+      return NextResponse.json({ success: true, data: newRole }, { status: 201, headers: corsHeaders() });
+    }
+
+    // Delivery Staff Creation
+    if (path === 'superadmin/delivery-staff' || path === 'admin/delivery-staff') {
+      const col = db.collection('drivers');
+      const drvId = body.id || `drv-${Date.now()}`;
+      const newDriver = {
+        ...body,
+        id: drvId,
+        status: body.status || 'available',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      await col.updateOne({ id: drvId }, { $set: newDriver }, { upsert: true });
+      return NextResponse.json({ success: true, data: newDriver }, { status: 201, headers: corsHeaders() });
+    }
+
+    // Activity Logs Creation
+    if (path === 'superadmin/activity-logs') {
+      const col = db.collection('activity_logs');
+      const logItem = {
+        ...body,
+        id: body.id || `log-${Date.now()}`,
+        timestamp: body.timestamp || new Date().toISOString(),
+      };
+      await col.insertOne(logItem);
+      return NextResponse.json({ success: true, data: logItem }, { status: 201, headers: corsHeaders() });
+    }
+
+    // Cancel Order
+    if (slug[1] === 'orders' && slug[2] && slug[3] === 'cancel') {
+      const id = slug[2];
+      const col = db.collection('orders');
+      await col.updateOne({ id }, { $set: { orderStatus: 'cancelled', cancellationReason: body.reason, updatedAt: new Date().toISOString() } });
+      return NextResponse.json({ success: true, id, status: 'cancelled' }, { headers: corsHeaders() });
     }
 
     // Login
@@ -708,6 +857,42 @@ export async function PUT(
       return NextResponse.json({ success: true, data: updated }, { headers: corsHeaders() });
     }
 
+    // Update Admin / Staff: superadmin/admins/:id or admin/staff/:id
+    if ((slug[1] === 'admins' || slug[1] === 'staff') && slug[2]) {
+      const id = slug[2];
+      const col = db.collection('admins');
+      const { _id, ...cleanData } = body;
+      cleanData.id = id;
+      cleanData.updatedAt = new Date().toISOString();
+      await col.updateOne({ id }, { $set: cleanData }, { upsert: true });
+      const updated = await col.findOne({ id });
+      return NextResponse.json({ success: true, data: updated }, { headers: corsHeaders() });
+    }
+
+    // Update Role: superadmin/roles/:id
+    if (slug[1] === 'roles' && slug[2]) {
+      const id = slug[2];
+      const col = db.collection('roles');
+      const { _id, ...cleanData } = body;
+      cleanData.id = id;
+      cleanData.updatedAt = new Date().toISOString();
+      await col.updateOne({ id }, { $set: cleanData }, { upsert: true });
+      const updated = await col.findOne({ id });
+      return NextResponse.json({ success: true, data: updated }, { headers: corsHeaders() });
+    }
+
+    // Update Driver: superadmin/delivery-staff/:id
+    if (slug[1] === 'delivery-staff' && slug[2]) {
+      const id = slug[2];
+      const col = db.collection('drivers');
+      const { _id, ...cleanData } = body;
+      cleanData.id = id;
+      cleanData.updatedAt = new Date().toISOString();
+      await col.updateOne({ id }, { $set: cleanData }, { upsert: true });
+      const updated = await col.findOne({ id });
+      return NextResponse.json({ success: true, data: updated }, { headers: corsHeaders() });
+    }
+
     // Update Settings
     if (path === 'superadmin/settings' || path === 'admin/settings') {
       const col = db.collection('settings');
@@ -798,6 +983,70 @@ export async function PATCH(
       return NextResponse.json({ success: true, status }, { headers: corsHeaders() });
     }
 
+    // Toggle/Update Admin / Staff Status: superadmin/admins/:id/status
+    if ((slug[1] === 'admins' || slug[1] === 'staff') && slug[2] && slug[3] === 'status') {
+      const id = slug[2];
+      const col = db.collection('admins');
+      const current = await col.findOne({ id });
+      const nextStatus = body.status ? body.status : (current?.status === 'active' ? 'inactive' : 'active');
+      await col.updateOne({ id }, { $set: { status: nextStatus, updatedAt: new Date().toISOString() } }, { upsert: true });
+      return NextResponse.json({ success: true, status: nextStatus, id }, { headers: corsHeaders() });
+    }
+
+    // Update Admin / Staff Permissions: superadmin/admins/:id/permissions
+    if ((slug[1] === 'admins' || slug[1] === 'staff') && slug[2] && slug[3] === 'permissions') {
+      const id = slug[2];
+      const col = db.collection('admins');
+      const permissions = body.permissions || {};
+      await col.updateOne({ id }, { $set: { permissions, updatedAt: new Date().toISOString() } }, { upsert: true });
+      return NextResponse.json({ success: true, permissions, id }, { headers: corsHeaders() });
+    }
+
+    // Update Driver Status: superadmin/delivery-staff/:id/status
+    if (slug[1] === 'delivery-staff' && slug[2] && slug[3] === 'status') {
+      const id = slug[2];
+      const col = db.collection('drivers');
+      const status = body.status || 'available';
+      await col.updateOne({ id }, { $set: { status, updatedAt: new Date().toISOString() } }, { upsert: true });
+      return NextResponse.json({ success: true, status, id }, { headers: corsHeaders() });
+    }
+
+    // Toggle Customer Status: superadmin/customers/:id/status
+    if (slug[1] === 'customers' && slug[2] && slug[3] === 'status') {
+      const id = slug[2];
+      const col = db.collection('customers');
+      const current = await col.findOne({ id });
+      const nextStatus = current?.status === 'active' ? 'inactive' : 'active';
+      await col.updateOne({ id }, { $set: { status: nextStatus, updatedAt: new Date().toISOString() } }, { upsert: true });
+      return NextResponse.json({ success: true, status: nextStatus, id }, { headers: corsHeaders() });
+    }
+
+    // Assign Driver to Order: superadmin/orders/:id/assign-driver
+    if (slug[1] === 'orders' && slug[2] && slug[3] === 'assign-driver') {
+      const id = slug[2];
+      const { driverId, driverName } = body;
+      const col = db.collection('orders');
+      await col.updateOne(
+        { id },
+        {
+          $set: {
+            assignedDriverId: driverId,
+            assignedDriverName: driverName,
+            updatedAt: new Date().toISOString(),
+          },
+        }
+      );
+      return NextResponse.json({ success: true, id, driverId, driverName }, { headers: corsHeaders() });
+    }
+
+    // Mark COD Paid: superadmin/orders/:id/mark-cod-paid
+    if (slug[1] === 'orders' && slug[2] && slug[3] === 'mark-cod-paid') {
+      const id = slug[2];
+      const col = db.collection('orders');
+      await col.updateOne({ id }, { $set: { paymentStatus: 'Paid (Cash Collected)', updatedAt: new Date().toISOString() } });
+      return NextResponse.json({ success: true, id }, { headers: corsHeaders() });
+    }
+
     return NextResponse.json(
       { success: false, error: `Route not found: ${path}` },
       { status: 404, headers: corsHeaders() }
@@ -834,6 +1083,30 @@ export async function DELETE(
       const col = db.collection('products');
       await col.deleteOne({ id });
       return NextResponse.json({ success: true, message: 'Product deleted' }, { headers: corsHeaders() });
+    }
+
+    // Delete Admin / Staff: superadmin/admins/:id or admin/staff/:id
+    if ((slug[1] === 'admins' || slug[1] === 'staff') && slug[2]) {
+      const id = slug[2];
+      const col = db.collection('admins');
+      await col.deleteOne({ id });
+      return NextResponse.json({ success: true, message: 'Admin account deleted' }, { headers: corsHeaders() });
+    }
+
+    // Delete Role: superadmin/roles/:id
+    if (slug[1] === 'roles' && slug[2]) {
+      const id = slug[2];
+      const col = db.collection('roles');
+      await col.deleteOne({ id });
+      return NextResponse.json({ success: true, message: 'Role deleted' }, { headers: corsHeaders() });
+    }
+
+    // Delete Driver: superadmin/delivery-staff/:id
+    if (slug[1] === 'delivery-staff' && slug[2]) {
+      const id = slug[2];
+      const col = db.collection('drivers');
+      await col.deleteOne({ id });
+      return NextResponse.json({ success: true, message: 'Driver deleted' }, { headers: corsHeaders() });
     }
 
     return NextResponse.json(

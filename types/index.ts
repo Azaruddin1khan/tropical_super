@@ -92,7 +92,7 @@ export interface AdminAccount {
   phone: string;
   password?: string;
   roleId?: string;
-  roleTitle: string; // e.g. "Kitchen Supervisor", "Front Counter Clerk", "Operations Manager"
+  roleTitle: string; // "Front Counter Clerk" | "Kitchen & Dispatch Lead"
   status: 'active' | 'inactive';
   lastActive: string;
   avatarUrl?: string;

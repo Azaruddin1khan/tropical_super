@@ -24,7 +24,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useSuperAdmin } from '@/context/super-admin-context';
 import { AdminPermissions } from '@/types';
-import { PRESET_TEMPLATES, FULL_PERMISSIONS_TEMPLATE } from '@/lib/utils';
+import { PRESET_TEMPLATES, FULL_PERMISSIONS_TEMPLATE, DEFAULT_SCREENSHOT_PERMISSIONS } from '@/lib/utils';
 
 function PermissionsContent() {
   const searchParams = useSearchParams();
@@ -166,19 +166,12 @@ function PermissionsContent() {
               >
                 Kitchen & Dispatch Lead
               </button>
-              <button
-                type="button"
-                onClick={() => applyPreset('full')}
-                className="px-2.5 py-1 text-xs font-semibold rounded-md bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100 transition-colors shadow-2xs"
-              >
-                Full Access
-              </button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* 6 Modular Permission Cards Grid */}
+      {/* 6 Modular Permission Cards Grid — Strictly showing the active toggles from client requirements */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
         {/* 1. ORDERS PERMISSIONS */}
@@ -216,12 +209,6 @@ function PermissionsContent() {
               onChange={() => togglePermission('orders', 'assignDeliveryStaff')}
             />
             <Switch
-              label="Cancel Orders"
-              description="Reject/cancel orders with documented reason"
-              checked={workingPermissions.orders.cancelOrders}
-              onChange={() => togglePermission('orders', 'cancelOrders')}
-            />
-            <Switch
               label="Print Invoices"
               description="Print customer receipts and kitchen tickets"
               checked={workingPermissions.orders.printInvoice}
@@ -253,24 +240,6 @@ function PermissionsContent() {
               onChange={() => togglePermission('products', 'viewProducts')}
             />
             <Switch
-              label="Add New Products"
-              description="Create new gyros, bowls, salads, smoothies"
-              checked={workingPermissions.products.addProducts}
-              onChange={() => togglePermission('products', 'addProducts')}
-            />
-            <Switch
-              label="Edit Products & Prices"
-              description="Modify ingredients, spiciness & BSD prices"
-              checked={workingPermissions.products.editProducts}
-              onChange={() => togglePermission('products', 'editProducts')}
-            />
-            <Switch
-              label="Delete Products"
-              description="Remove food dishes from menu"
-              checked={workingPermissions.products.deleteProducts}
-              onChange={() => togglePermission('products', 'deleteProducts')}
-            />
-            <Switch
               label="Update Stock Availability"
               description="Toggle In-Stock / Sold-Out status instantly"
               checked={workingPermissions.products.updateStockAvailability}
@@ -295,24 +264,6 @@ function PermissionsContent() {
               checked={workingPermissions.categories.viewCategories}
               onChange={() => togglePermission('categories', 'viewCategories')}
             />
-            <Switch
-              label="Add Categories"
-              description="Create new menu categories"
-              checked={workingPermissions.categories.addCategories}
-              onChange={() => togglePermission('categories', 'addCategories')}
-            />
-            <Switch
-              label="Edit Categories"
-              description="Update category name, description & images"
-              checked={workingPermissions.categories.editCategories}
-              onChange={() => togglePermission('categories', 'editCategories')}
-            />
-            <Switch
-              label="Delete Categories"
-              description="Remove menu categories from customer app"
-              checked={workingPermissions.categories.deleteCategories}
-              onChange={() => togglePermission('categories', 'deleteCategories')}
-            />
           </CardContent>
         </Card>
 
@@ -326,18 +277,6 @@ function PermissionsContent() {
             <CardDescription>Controls financial records, transactions & COD settlement</CardDescription>
           </CardHeader>
           <CardContent className="p-4 space-y-3">
-            <Switch
-              label="View Payments"
-              description="Access payment status overview"
-              checked={workingPermissions.payments.viewPayments}
-              onChange={() => togglePermission('payments', 'viewPayments')}
-            />
-            <Switch
-              label="View Transactions"
-              description="Inspect detailed payment transactions ledger"
-              checked={workingPermissions.payments.viewTransactions}
-              onChange={() => togglePermission('payments', 'viewTransactions')}
-            />
             <Switch
               label="Mark Cash Received (COD)"
               description="Reconcile Cash on Delivery payments"
@@ -363,24 +302,6 @@ function PermissionsContent() {
               checked={workingPermissions.deliveryStaff.viewStaff}
               onChange={() => togglePermission('deliveryStaff', 'viewStaff')}
             />
-            <Switch
-              label="Add Delivery Staff"
-              description="Register new couriers to the fleet"
-              checked={workingPermissions.deliveryStaff.addStaff}
-              onChange={() => togglePermission('deliveryStaff', 'addStaff')}
-            />
-            <Switch
-              label="Edit Delivery Staff"
-              description="Update driver phone, vehicle & active status"
-              checked={workingPermissions.deliveryStaff.editStaff}
-              onChange={() => togglePermission('deliveryStaff', 'editStaff')}
-            />
-            <Switch
-              label="Manage Assignments"
-              description="Reassign orders between couriers"
-              checked={workingPermissions.deliveryStaff.manageAssignments}
-              onChange={() => togglePermission('deliveryStaff', 'manageAssignments')}
-            />
           </CardContent>
         </Card>
 
@@ -405,12 +326,6 @@ function PermissionsContent() {
               description="Inspect lifetime order history & spend in BSD"
               checked={workingPermissions.customers.viewCustomerDetails}
               onChange={() => togglePermission('customers', 'viewCustomerDetails')}
-            />
-            <Switch
-              label="Manage Customer Accounts"
-              description="Toggle customer status (Active / Banned)"
-              checked={workingPermissions.customers.manageCustomerAccounts}
-              onChange={() => togglePermission('customers', 'manageCustomerAccounts')}
             />
           </CardContent>
         </Card>

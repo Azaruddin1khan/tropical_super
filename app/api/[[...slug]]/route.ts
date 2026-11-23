@@ -523,14 +523,12 @@ export async function POST(
         roleTitle: roleTitle || 'Front Counter Clerk',
         status: status || 'active',
         permissions: permissions || {
-          orders: { view: true, create: true, edit: true, delete: true, updateStatus: true, assignDriver: true },
-          products: { view: true, create: true, edit: true, delete: true, toggleAvailability: true },
-          categories: { view: true, create: true, edit: true, delete: true },
-          payments: { view: true, refund: true, markCodPaid: true, exportReports: true },
-          delivery: { viewFleet: true, reassignOrders: true, manageDrivers: true },
-          customers: { view: true, toggleStatus: true, viewOrderHistory: true },
-          analytics: { viewReports: true, exportData: true },
-          settings: { view: true, editStoreInfo: true, updateGeofence: true, manageStaff: true },
+          orders: { viewOrders: true, viewOrderDetails: true, updateOrderStatus: true, assignDeliveryStaff: true, cancelOrders: false, printInvoice: true, exportOrders: true },
+          products: { viewProducts: true, addProducts: false, editProducts: false, deleteProducts: false, updateStockAvailability: true },
+          categories: { viewCategories: true, addCategories: false, editCategories: false, deleteCategories: false },
+          payments: { viewPayments: false, viewTransactions: false, markCashReceived: true },
+          deliveryStaff: { viewStaff: true, addStaff: false, editStaff: false, manageAssignments: false },
+          customers: { viewCustomers: true, viewCustomerDetails: true, manageCustomerAccounts: false },
         },
         password: password || 'Admin@123',
         avatarUrl: avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
@@ -618,6 +616,17 @@ export async function POST(
           { success: false, error: 'Admin account not found' },
           { status: 401, headers: corsHeaders() }
         );
+      }
+
+      if (!admin.permissions) {
+        admin.permissions = {
+          orders: { viewOrders: true, viewOrderDetails: true, updateOrderStatus: true, assignDeliveryStaff: true, cancelOrders: false, printInvoice: true, exportOrders: true },
+          products: { viewProducts: true, addProducts: false, editProducts: false, deleteProducts: false, updateStockAvailability: true },
+          categories: { viewCategories: true, addCategories: false, editCategories: false, deleteCategories: false },
+          payments: { viewPayments: false, viewTransactions: false, markCashReceived: true },
+          deliveryStaff: { viewStaff: true, addStaff: false, editStaff: false, manageAssignments: false },
+          customers: { viewCustomers: true, viewCustomerDetails: true, manageCustomerAccounts: false },
+        };
       }
 
       const expectedPassword = admin.password || 'Admin@123';

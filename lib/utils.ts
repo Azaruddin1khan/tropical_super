@@ -135,136 +135,82 @@ export const FULL_PERMISSIONS_TEMPLATE: AdminPermissions = {
 };
 
 /**
- * Preset permission templates for quick setup
+ * Exact 13 active permissions from client screenshots:
+ * Orders: viewOrders, viewOrderDetails, updateOrderStatus, assignDeliveryStaff, printInvoice, exportOrders
+ * Products: viewProducts, updateStockAvailability
+ * Categories: viewCategories
+ * Payments: markCashReceived
+ * DeliveryStaff: viewStaff
+ * Customers: viewCustomers, viewCustomerDetails
+ */
+export const DEFAULT_SCREENSHOT_PERMISSIONS: AdminPermissions = {
+  orders: {
+    viewOrders: true,
+    viewOrderDetails: true,
+    updateOrderStatus: true,
+    assignDeliveryStaff: true,
+    cancelOrders: false,
+    printInvoice: true,
+    exportOrders: true,
+  },
+  products: {
+    viewProducts: true,
+    addProducts: false,
+    editProducts: false,
+    deleteProducts: false,
+    updateStockAvailability: true,
+  },
+  categories: {
+    viewCategories: true,
+    addCategories: false,
+    editCategories: false,
+    deleteCategories: false,
+  },
+  payments: {
+    viewPayments: false,
+    viewTransactions: false,
+    markCashReceived: true,
+  },
+  deliveryStaff: {
+    viewStaff: true,
+    addStaff: false,
+    editStaff: false,
+    manageAssignments: false,
+  },
+  customers: {
+    viewCustomers: true,
+    viewCustomerDetails: true,
+    manageCustomerAccounts: false,
+  },
+};
+
+/**
+ * Preset permission templates strictly restricted to the 2 operational roles:
+ * 1. Front Counter Clerk
+ * 2. Kitchen & Dispatch Lead
+ * Both have the exact 13 active screenshot permissions enabled by default.
  */
 export const PRESET_TEMPLATES: Record<string, { label: string; permissions: AdminPermissions }> = {
   front_desk: {
     label: 'Front Counter Clerk Preset',
     permissions: {
-      orders: {
-        viewOrders: true,
-        viewOrderDetails: true,
-        updateOrderStatus: false,
-        assignDeliveryStaff: false,
-        cancelOrders: false,
-        printInvoice: true,
-        exportOrders: false,
-      },
-      products: {
-        viewProducts: true,
-        addProducts: false,
-        editProducts: false,
-        deleteProducts: false,
-        updateStockAvailability: true,
-      },
-      categories: {
-        viewCategories: true,
-        addCategories: false,
-        editCategories: false,
-        deleteCategories: false,
-      },
-      payments: {
-        viewPayments: false,
-        viewTransactions: false,
-        markCashReceived: true,
-      },
-      deliveryStaff: {
-        viewStaff: true,
-        addStaff: false,
-        editStaff: false,
-        manageAssignments: false,
-      },
-      customers: {
-        viewCustomers: true,
-        viewCustomerDetails: true,
-        manageCustomerAccounts: false,
-      },
+      orders: { ...DEFAULT_SCREENSHOT_PERMISSIONS.orders },
+      products: { ...DEFAULT_SCREENSHOT_PERMISSIONS.products },
+      categories: { ...DEFAULT_SCREENSHOT_PERMISSIONS.categories },
+      payments: { ...DEFAULT_SCREENSHOT_PERMISSIONS.payments },
+      deliveryStaff: { ...DEFAULT_SCREENSHOT_PERMISSIONS.deliveryStaff },
+      customers: { ...DEFAULT_SCREENSHOT_PERMISSIONS.customers },
     },
   },
   kitchen_lead: {
     label: 'Kitchen & Dispatch Lead Preset',
     permissions: {
-      orders: {
-        viewOrders: true,
-        viewOrderDetails: true,
-        updateOrderStatus: true,
-        assignDeliveryStaff: false,
-        cancelOrders: false,
-        printInvoice: true,
-        exportOrders: false,
-      },
-      products: {
-        viewProducts: true,
-        addProducts: false,
-        editProducts: false,
-        deleteProducts: false,
-        updateStockAvailability: true,
-      },
-      categories: {
-        viewCategories: true,
-        addCategories: false,
-        editCategories: false,
-        deleteCategories: false,
-      },
-      payments: {
-        viewPayments: false,
-        viewTransactions: false,
-        markCashReceived: false,
-      },
-      deliveryStaff: {
-        viewStaff: true,
-        addStaff: false,
-        editStaff: false,
-        manageAssignments: true,
-      },
-      customers: {
-        viewCustomers: true,
-        viewCustomerDetails: false,
-        manageCustomerAccounts: false,
-      },
-    },
-  },
-  operations_manager: {
-    label: 'Operations Manager Preset',
-    permissions: {
-      orders: {
-        viewOrders: true,
-        viewOrderDetails: true,
-        updateOrderStatus: true,
-        assignDeliveryStaff: true,
-        cancelOrders: true,
-        printInvoice: true,
-        exportOrders: true,
-      },
-      products: {
-        viewProducts: true,
-        addProducts: true,
-        editProducts: true,
-        deleteProducts: false,
-        updateStockAvailability: true,
-      },
-      categories: {
-        viewCategories: true,
-        addCategories: true,
-        editCategories: true,
-        deleteCategories: false,
-      },
-      payments: {
-        viewPayments: true,
-        viewTransactions: true,
-        markCashReceived: true,
-      },
-      deliveryStaff: {
-        viewStaff: true,
-        addStaff: true,
-        editStaff: true,
-        manageAssignments: true,
-      },
-      customers: {
-        viewCustomers: true,
-        viewCustomerDetails: true,
-        manageCustomerAccounts: true,
-      },
+      orders: { ...DEFAULT_SCREENSHOT_PERMISSIONS.orders },
+      products: { ...DEFAULT_SCREENSHOT_PERMISSIONS.products },
+      categories: { ...DEFAULT_SCREENSHOT_PERMISSIONS.categories },
+      payments: { ...DEFAULT_SCREENSHOT_PERMISSIONS.payments },
+      deliveryStaff: { ...DEFAULT_SCREENSHOT_PERMISSIONS.deliveryStaff },
+      customers: { ...DEFAULT_SCREENSHOT_PERMISSIONS.customers },
     },
   },
 };

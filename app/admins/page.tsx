@@ -76,24 +76,26 @@ export default function AdminsPage() {
     }
   };
 
-  const filteredAdmins = admins
+  const filteredAdmins = (admins || [])
     .filter(
       (a) =>
+        a &&
         a.id !== 'adm-003' &&
         a.roleTitle !== 'Store Supervisor' &&
-        !String(a.name).toLowerCase().includes('michael strachan')
+        !String(a.name || '').toLowerCase().includes('michael strachan')
     )
     .filter((admin, index, self) => {
-      if (self.findIndex((a) => (a.id || (a as any)._id) === (admin.id || (admin as any)._id)) !== index) {
+      if (!admin) return false;
+      const adminKey = admin.id || (admin as any)._id;
+      if (self.findIndex((a) => (a?.id || (a as any)?._id) === adminKey) !== index) {
         return false;
       }
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
-      return (
-        admin.name.toLowerCase().includes(q) ||
-        admin.email.toLowerCase().includes(q) ||
-        (admin.roleTitle && admin.roleTitle.toLowerCase().includes(q))
-      );
+      const name = String(admin.name || '').toLowerCase();
+      const email = String(admin.email || '').toLowerCase();
+      const roleTitle = String(admin.roleTitle || '').toLowerCase();
+      return name.includes(q) || email.includes(q) || roleTitle.includes(q);
     });
 
   const handleOpenAddModal = () => {
@@ -102,7 +104,7 @@ export default function AdminsPage() {
       email: '',
       phone: '',
       password: '',
-      roleId: roles[0]?.id || '',
+      roleId: roles?.[0]?.id || '',
     });
     setFormErrors({});
     setShowCreatePassword(false);
@@ -250,29 +252,29 @@ export default function AdminsPage() {
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center border border-slate-200 text-xs">
-                            {admin.name.slice(0, 2).toUpperCase()}
+                            {(admin.name || 'Admin').slice(0, 2).toUpperCase()}
                           </div>
                           <div>
-                            <div className="font-bold text-slate-900 text-xs">{admin.name}</div>
-                            <div className="text-[11px] text-slate-400 font-mono">{admin.id}</div>
+                            <div className="font-bold text-slate-900 text-xs">{admin.name || 'Admin Staff'}</div>
+                            <div className="text-[11px] text-slate-400 font-mono">{admin.id || ''}</div>
                           </div>
                         </div>
                       </td>
 
                       <td className="py-3.5 px-4">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-200">
-                          {admin.roleTitle}
+                          {admin.roleTitle || 'Front Counter Clerk'}
                         </span>
                       </td>
 
                       <td className="py-3.5 px-4 space-y-0.5 text-slate-600">
                         <div className="flex items-center gap-1.5 text-[11px]">
                           <Mail className="w-3 h-3 text-slate-400" />
-                          <span>{admin.email}</span>
+                          <span>{admin.email || '—'}</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-[11px]">
                           <Phone className="w-3 h-3 text-slate-400" />
-                          <span>{admin.phone}</span>
+                          <span>{admin.phone || '—'}</span>
                         </div>
                       </td>
 
@@ -296,7 +298,7 @@ export default function AdminsPage() {
 
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <Link href={`/permissions?adminId=${admin.id}`}>
+                          <Link href={`/permissions?adminId=${admin.id || ''}`}>
                             <Button variant="outline" size="sm" className="text-xs bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300">
                               <KeyRound className="w-3.5 h-3.5 mr-1 text-amber-600" />
                               Permissions
@@ -319,7 +321,7 @@ export default function AdminsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => toggleAdminStatus(admin.id)}
+                            onClick={() => admin.id && toggleAdminStatus(admin.id)}
                             title={admin.status === 'active' ? 'Deactivate Access' : 'Activate Access'}
                             className={admin.status === 'active' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50'}
                           >

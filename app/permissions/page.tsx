@@ -32,11 +32,12 @@ function PermissionsContent() {
 
   const { admins, updateAdminPermissions } = useSuperAdmin();
 
-  const validAdmins = admins.filter(
+  const validAdmins = (admins || []).filter(
     (a) =>
+      a &&
       a.id !== 'adm-003' &&
       a.roleTitle !== 'Store Supervisor' &&
-      !String(a.name).toLowerCase().includes('michael strachan')
+      !String(a.name || '').toLowerCase().includes('michael strachan')
   );
 
   // Selected Admin Account

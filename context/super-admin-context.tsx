@@ -161,9 +161,10 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
       if (savedAdmins) {
         const parsed = dedupeById<AdminAccount>(JSON.parse(savedAdmins)).filter(
           (a: any) =>
+            a &&
             a.id !== 'adm-003' &&
             a.roleTitle !== 'Store Supervisor' &&
-            !String(a.name).toLowerCase().includes('michael strachan')
+            !String(a.name || '').toLowerCase().includes('michael strachan')
         );
         if (parsed.length > 0) {
           setAdmins(parsed);
@@ -265,9 +266,10 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
         if (adminsRes.status === 'fulfilled' && adminsRes.value.success && Array.isArray(adminsRes.value.data) && adminsRes.value.data.length > 0) {
           const sanitizedAdmins = dedupeById<AdminAccount>(adminsRes.value.data).filter(
             (a: any) =>
+              a &&
               a.id !== 'adm-003' &&
               a.roleTitle !== 'Store Supervisor' &&
-              !String(a.name).toLowerCase().includes('michael strachan')
+              !String(a.name || '').toLowerCase().includes('michael strachan')
           );
           if (sanitizedAdmins.length > 0) {
             setAdmins(sanitizedAdmins);

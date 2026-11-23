@@ -20,24 +20,47 @@ export function formatCurrency(amount: number): string {
     .replace(/\u00a0/g, ' ');
 }
 
-export function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  }).format(date);
+export function formatDate(dateString?: string | null): string {
+  if (!dateString) return 'Just now';
+  if (typeof dateString === 'string' && (dateString.toLowerCase().includes('now') || dateString.toLowerCase().includes('ago'))) {
+    return dateString;
+  }
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return String(dateString);
+    }
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(date);
+  } catch {
+    return String(dateString || 'Just now');
+  }
 }
 
-export function formatShortDate(dateString: string): string {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-  }).format(date);
+export function formatShortDate(dateString?: string | null): string {
+  if (!dateString) return 'Just now';
+  if (typeof dateString === 'string' && (dateString.toLowerCase().includes('now') || dateString.toLowerCase().includes('ago'))) {
+    return dateString;
+  }
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return String(dateString);
+    }
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(date);
+  } catch {
+    return String(dateString || 'Just now');
+  }
 }
 
 /**

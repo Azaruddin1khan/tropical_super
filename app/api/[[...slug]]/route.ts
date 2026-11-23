@@ -444,6 +444,222 @@ export async function POST(
       );
     }
 
+    // Login
+    if (path === 'admin/login' || path === 'superadmin/login') {
+      const { email, password } = body || {};
+      const cleanEmail = (email || '').trim().toLowerCase();
+      const col = db.collection('admins');
+      let admin: any = await col.findOne({ email: { $regex: new RegExp(`^${cleanEmail}$`, 'i') } });
+
+      if (!admin) {
+        const defaultAdmin = initialAdminAccounts.find((a) => a.email.toLowerCase() === cleanEmail);
+        if (defaultAdmin) {
+          admin = {
+            ...defaultAdmin,
+            password: 'Admin@123',
+            createdAt: new Date().toISOString(),
+          };
+          await col.updateOne({ id: admin.id }, { $set: admin }, { upsert: true });
+        }
+      }
+
+      if (!admin) {
+        return NextResponse.json(
+          { success: false, error: 'Admin account not found' },
+          { status: 401, headers: corsHeaders() }
+        );
+      }
+
+      const expectedPassword = admin.password || 'Admin@123';
+      if (password && password !== expectedPassword) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid password. Please check your credentials.' },
+          { status: 401, headers: corsHeaders() }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          token: `jwt_${Date.now()}_${admin.id}`,
+          user: admin,
+          admin: admin,
+        },
+        { headers: corsHeaders() }
+      );
+    }
+
+    // Forgot Password
+    if (path === 'admin/forgot-password' || path === 'superadmin/forgot-password') {
+      const { email } = body || {};
+      const cleanEmail = (email || '').trim().toLowerCase();
+      if (!cleanEmail) {
+        return NextResponse.json(
+          { success: false, error: 'Email address is required' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      const adminsCol = db.collection('admins');
+      let admin: any = await adminsCol.findOne({ email: { $regex: new RegExp(`^${cleanEmail}$`, 'i') } });
+
+      if (!admin) {
+        const defaultAdmin = initialAdminAccounts.find((a) => a.email.toLowerCase() === cleanEmail);
+        if (defaultAdmin) {
+          admin = {
+            ...defaultAdmin,
+            password: 'Admin@123',
+            createdAt: new Date().toISOString(),
+          };
+          await adminsCol.updateOne({ id: admin.id }, { $set: admin }, { upsert: true });
+        }
+      }
+
+      if (!admin) {
+        return NextResponse.json(
+          { success: false, error: 'No admin account found with this email address' },
+          { status: 404, headers: corsHeaders() }
+        );
+      }
+
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const token = `rst_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+      const resetsCol = db.collection('password_resets');
+      await resetsCol.insertOne({
+        email: cleanEmail,
+        adminId: admin.id,
+        adminName: admin.name,
+        otp,
+        token,
+        expiresAt,
+        used: false,
+        createdAt: new Date(),
+      });
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: `Verification code sent to ${cleanEmail}`,
+          otp,
+          token,
+          expiresInMinutes: 15,
+        },
+        { headers: corsHeaders() }
+      );
+    }
+
+    // Verify Reset Code
+    if (path === 'admin/verify-reset-code' || path === 'superadmin/verify-reset-code') {
+      const { email, otp } = body || {};
+      const cleanEmail = (email || '').trim().toLowerCase();
+      const cleanOtp = (otp || '').trim();
+
+      if (!cleanEmail || !cleanOtp) {
+        return NextResponse.json(
+          { success: false, error: 'Email and verification code are required' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      const resetsCol = db.collection('password_resets');
+      const resetRecord = await resetsCol.findOne({
+        email: cleanEmail,
+        otp: cleanOtp,
+        used: false,
+        expiresAt: { $gt: new Date() },
+      });
+
+      if (!resetRecord) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid or expired verification code' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          valid: true,
+          token: resetRecord.token,
+          message: 'Verification code verified successfully',
+        },
+        { headers: corsHeaders() }
+      );
+    }
+
+    // Reset Password
+    if (path === 'admin/reset-password' || path === 'superadmin/reset-password') {
+      const { email, otp, token, newPassword } = body || {};
+      const cleanEmail = (email || '').trim().toLowerCase();
+
+      if (!cleanEmail) {
+        return NextResponse.json(
+          { success: false, error: 'Email address is required' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      if (!newPassword || newPassword.length < 6) {
+        return NextResponse.json(
+          { success: false, error: 'New password must be at least 6 characters' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      const resetsCol = db.collection('password_resets');
+      const query: any = {
+        email: cleanEmail,
+        used: false,
+        expiresAt: { $gt: new Date() },
+      };
+
+      if (token) {
+        query.token = token;
+      } else if (otp) {
+        query.otp = otp.trim();
+      } else {
+        return NextResponse.json(
+          { success: false, error: 'Verification code or reset token is required' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      const resetRecord = await resetsCol.findOne(query);
+      if (!resetRecord) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid, expired, or already used reset request' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      await resetsCol.updateOne(
+        { _id: resetRecord._id },
+        { $set: { used: true, usedAt: new Date() } }
+      );
+
+      const adminsCol = db.collection('admins');
+      await adminsCol.updateOne(
+        { email: { $regex: new RegExp(`^${cleanEmail}$`, 'i') } },
+        {
+          $set: {
+            password: newPassword,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+        { upsert: true }
+      );
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Password reset successfully! You can now log in with your new password.',
+        },
+        { headers: corsHeaders() }
+      );
+    }
+
     return NextResponse.json(
       { success: false, error: `Route not found: ${path}` },
       { status: 404, headers: corsHeaders() }

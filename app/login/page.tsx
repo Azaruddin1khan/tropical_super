@@ -195,18 +195,19 @@ export default function SuperAdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-4 relative overflow-hidden select-none">
-      {/* Ambient Glow */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-gradient-to-br from-amber-50/80 via-slate-50 to-orange-50/70 flex flex-col justify-center items-center p-4 relative overflow-hidden select-none">
+      {/* Warm Ambient Glows */}
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-amber-400/25 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 -right-32 w-96 h-96 bg-orange-300/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-amber-300/20 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Container */}
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden relative z-10 animate-in fade-in zoom-in-95 duration-200">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl shadow-slate-300/70 border border-slate-200/80 overflow-hidden relative z-10 animate-in fade-in zoom-in-95 duration-200">
         {/* Brand Banner */}
         <div className="bg-gradient-to-br from-amber-500 via-amber-400 to-amber-500 p-8 text-center relative">
           <div className="w-48 h-20 mx-auto rounded-2xl overflow-hidden border-2 border-white shadow-lg bg-white relative mb-3">
             <Image
-              src="/images/gyro_with_fries.jpg"
+              src="/images/tropical_gyros_logo.png"
               alt="Tropical Gyros Official Logo"
               fill
               className="object-contain p-1"

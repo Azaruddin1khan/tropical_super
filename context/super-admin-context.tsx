@@ -119,12 +119,12 @@ function dedupeById<T extends { id?: string; _id?: string }>(items: T[]): T[] {
 export function SuperAdminProvider({ children }: { children: React.ReactNode }) {
   const [admins, setAdmins] = useState<AdminAccount[]>(() => dedupeById(initialAdminAccounts));
   const [roles, setRoles] = useState<CustomRole[]>(() => dedupeById(initialCustomRoles));
-  const [orders, setOrders] = useState<Order[]>(() => dedupeById(initialOrders));
-  const [products, setProducts] = useState<Product[]>(() => dedupeById(initialProducts));
-  const [categories, setCategories] = useState<Category[]>(() => dedupeById(initialCategories));
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
   const categoriesRef = useRef<Category[]>(initialCategories);
-  const [drivers, setDrivers] = useState<DeliveryStaff[]>(() => dedupeById(initialDrivers));
-  const [customers, setCustomers] = useState<Customer[]>(() => dedupeById(initialCustomers));
+  const [drivers, setDrivers] = useState<DeliveryStaff[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>(initialActivityLogs);
   const [settings, setSettings] = useState<RestaurantSettings>(initialSettings);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -182,7 +182,14 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
       }
 
       const savedOrders = localStorage.getItem('tg_super_orders');
-      if (savedOrders) setOrders(dedupeById<Order>(JSON.parse(savedOrders)));
+      if (savedOrders) {
+        const parsed = dedupeById<Order>(JSON.parse(savedOrders));
+        if (parsed.some((o: any) => o.id === 'ORD-884920' || o.id === 'TRP-502602')) {
+          localStorage.removeItem('tg_super_orders');
+        } else {
+          setOrders(parsed);
+        }
+      }
 
       const savedProducts = localStorage.getItem('tg_super_products');
       if (savedProducts) {
@@ -208,10 +215,24 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
       }
 
       const savedDrivers = localStorage.getItem('tg_super_drivers');
-      if (savedDrivers) setDrivers(dedupeById<DeliveryStaff>(JSON.parse(savedDrivers)));
+      if (savedDrivers) {
+        const parsed = dedupeById<DeliveryStaff>(JSON.parse(savedDrivers));
+        if (parsed.some((d: any) => d.id === 'drv-01')) {
+          localStorage.removeItem('tg_super_drivers');
+        } else {
+          setDrivers(parsed);
+        }
+      }
 
       const savedCustomers = localStorage.getItem('tg_super_customers');
-      if (savedCustomers) setCustomers(dedupeById<Customer>(JSON.parse(savedCustomers)));
+      if (savedCustomers) {
+        const parsed = dedupeById<Customer>(JSON.parse(savedCustomers));
+        if (parsed.some((c: any) => c.id === 'cust-01')) {
+          localStorage.removeItem('tg_super_customers');
+        } else {
+          setCustomers(parsed);
+        }
+      }
 
       const savedLogs = localStorage.getItem('tg_super_logs');
       if (savedLogs) setActivityLogs(JSON.parse(savedLogs));
@@ -267,7 +288,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
           );
           setRoles(sanitizedRoles);
         }
-        if (ordersRes.status === 'fulfilled' && ordersRes.value.success && Array.isArray(ordersRes.value.data) && ordersRes.value.data.length > 0) {
+        if (ordersRes.status === 'fulfilled' && ordersRes.value.success && Array.isArray(ordersRes.value.data)) {
           const ords = dedupeById<Order>(ordersRes.value.data);
           setOrders(ords);
           try {
@@ -289,11 +310,13 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
             localStorage.setItem('tg_super_categories', JSON.stringify(uniqueCats));
           } catch {}
         }
-        if (driversRes.status === 'fulfilled' && driversRes.value.success && Array.isArray(driversRes.value.data) && driversRes.value.data.length > 0) {
-          setDrivers(dedupeById<DeliveryStaff>(driversRes.value.data));
+        if (driversRes.status === 'fulfilled' && driversRes.value.success && Array.isArray(driversRes.value.data)) {
+          const drvs = dedupeById<DeliveryStaff>(driversRes.value.data);
+          setDrivers(drvs);
         }
-        if (customersRes.status === 'fulfilled' && customersRes.value.success && Array.isArray(customersRes.value.data) && customersRes.value.data.length > 0) {
-          setCustomers(dedupeById<Customer>(customersRes.value.data));
+        if (customersRes.status === 'fulfilled' && customersRes.value.success && Array.isArray(customersRes.value.data)) {
+          const custs = dedupeById<Customer>(customersRes.value.data);
+          setCustomers(custs);
         }
         if (settingsRes.status === 'fulfilled' && settingsRes.value.success && settingsRes.value.data) {
           setSettings(settingsRes.value.data);
@@ -308,10 +331,10 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
     const orderPollInterval = setInterval(async () => {
       try {
         const ordersRes = await SuperAdminApi.getOrders();
-        if (ordersRes.success && Array.isArray(ordersRes.data) && ordersRes.data.length > 0) {
+        if (ordersRes.success && Array.isArray(ordersRes.data)) {
           const ords = dedupeById<Order>(ordersRes.data);
           setOrders((prev) => {
-            if (ords.length !== prev.length || ords[0]?.id !== prev[0]?.id) {
+            if (ords.length !== prev.length || (ords.length > 0 && ords[0]?.id !== prev[0]?.id)) {
               return ords;
             }
             return prev;

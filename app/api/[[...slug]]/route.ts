@@ -115,12 +115,57 @@ export async function GET(
       if (email) query.customerEmail = email;
       if (phone) query.customerPhone = phone;
 
-      let items = await col.find(query).sort({ createdAt: -1 }).toArray();
-      if (!items || items.length === 0) {
-        items = initialOrders as any;
-      }
+      const rawOrders = await col.find(query).sort({ createdAt: -1 }).toArray();
+      const normalizedOrders = (rawOrders || []).map((o: any) => {
+        const orderId = o.orderId || o.id;
+        const total = Number(o.total ?? o.pricing?.total ?? o.totalBsd ?? 0);
+        const subtotal = Number(o.subtotal ?? o.pricing?.subtotal ?? 0);
+        const deliveryFee = Number(o.deliveryFee ?? o.pricing?.deliveryFee ?? 0);
+        const tax = Number(o.tax ?? o.pricing?.tax ?? 0);
+        const platformFee = Number(o.platformFee ?? o.pricing?.platformFee ?? 0);
+        const discount = Number(o.discount ?? o.pricing?.discount ?? 0);
+
+        const items = (Array.isArray(o.items) ? o.items : []).map((i: any) => ({
+          id: i.id || i.productId || `item_${Date.now()}`,
+          productId: i.productId || i.id || 'prod-1',
+          productName: i.productName || i.name || i.food?.name || 'Tropical Gyros Dish',
+          price: Number(i.price ?? i.food?.price ?? 0),
+          quantity: Number(i.quantity ?? 1),
+          imageUrl: i.imageUrl || i.food?.imageUrl || '/images/gyro_with_fries.jpg',
+          specialInstructions: i.specialInstructions || '',
+        }));
+
+        return {
+          id: orderId,
+          orderId,
+          customerName: o.customerName || o.deliveryAddress?.recipientName || 'Tropical Guest',
+          customerEmail: o.customerEmail || 'customer@tropicalgyros.com',
+          customerPhone: o.customerPhone || o.deliveryAddress?.phone || '+1 (242) 555-0100',
+          deliveryAddress: o.deliveryAddress || null,
+          deliveryInstructions: o.deliveryInstructions || '',
+          fulfillmentType: o.fulfillmentType || (o.deliveryAddress ? 'delivery' : 'pickup'),
+          items,
+          subtotal,
+          deliveryFee,
+          tax,
+          platformFee,
+          discount,
+          total,
+          paymentMethod: o.paymentMethod || 'card',
+          paymentStatus: o.isPaid ? 'paid' : (o.paymentStatus || 'pending'),
+          orderStatus: o.orderStatus || o.status || 'processing',
+          createdAt: o.createdAt || new Date().toISOString(),
+          updatedAt: o.updatedAt || o.createdAt || new Date().toISOString(),
+          assignedDriverId: o.assignedDriverId || null,
+          assignedDriverName: o.assignedDriverName || null,
+          estimatedDeliveryTime: o.estimatedDeliveryTime || '25-35 mins',
+          barcodeValue: o.barcodeValue || o.barcodeId || `${orderId}-BC`,
+          qrCodeValue: o.qrCodeValue || `https://tropicalgyros.demo/order/${orderId}`,
+        };
+      });
+
       return NextResponse.json(
-        { success: true, data: dedupeById(items) },
+        { success: true, data: dedupeById(normalizedOrders) },
         { headers: corsHeaders() }
       );
     }
@@ -133,23 +178,63 @@ export async function GET(
       const parts = path.split('/');
       const orderId = parts[parts.length - 1];
       const col = db.collection('orders');
-      const order = await col.findOne({ id: orderId });
-      if (order) {
-        return NextResponse.json({ success: true, data: order, order }, { headers: corsHeaders() });
+      const o = await col.findOne({ $or: [{ id: orderId }, { orderId: orderId }] });
+      if (o) {
+        const total = Number(o.total ?? o.pricing?.total ?? o.totalBsd ?? 0);
+        const subtotal = Number(o.subtotal ?? o.pricing?.subtotal ?? 0);
+        const deliveryFee = Number(o.deliveryFee ?? o.pricing?.deliveryFee ?? 0);
+        const tax = Number(o.tax ?? o.pricing?.tax ?? 0);
+        const platformFee = Number(o.platformFee ?? o.pricing?.platformFee ?? 0);
+        const discount = Number(o.discount ?? o.pricing?.discount ?? 0);
+
+        const items = (Array.isArray(o.items) ? o.items : []).map((i: any) => ({
+          id: i.id || i.productId || `item_${Date.now()}`,
+          productId: i.productId || i.id || 'prod-1',
+          productName: i.productName || i.name || i.food?.name || 'Tropical Gyros Dish',
+          price: Number(i.price ?? i.food?.price ?? 0),
+          quantity: Number(i.quantity ?? 1),
+          imageUrl: i.imageUrl || i.food?.imageUrl || '/images/gyro_with_fries.jpg',
+          specialInstructions: i.specialInstructions || '',
+        }));
+
+        const normalized = {
+          id: orderId,
+          orderId,
+          customerName: o.customerName || o.deliveryAddress?.recipientName || 'Tropical Guest',
+          customerEmail: o.customerEmail || 'customer@tropicalgyros.com',
+          customerPhone: o.customerPhone || o.deliveryAddress?.phone || '+1 (242) 555-0100',
+          deliveryAddress: o.deliveryAddress || null,
+          deliveryInstructions: o.deliveryInstructions || '',
+          fulfillmentType: o.fulfillmentType || (o.deliveryAddress ? 'delivery' : 'pickup'),
+          items,
+          subtotal,
+          deliveryFee,
+          tax,
+          platformFee,
+          discount,
+          total,
+          paymentMethod: o.paymentMethod || 'card',
+          paymentStatus: o.isPaid ? 'paid' : (o.paymentStatus || 'pending'),
+          orderStatus: o.orderStatus || o.status || 'processing',
+          createdAt: o.createdAt || new Date().toISOString(),
+          updatedAt: o.updatedAt || o.createdAt || new Date().toISOString(),
+          assignedDriverId: o.assignedDriverId || null,
+          assignedDriverName: o.assignedDriverName || null,
+          estimatedDeliveryTime: o.estimatedDeliveryTime || '25-35 mins',
+          barcodeValue: o.barcodeValue || o.barcodeId || `${orderId}-BC`,
+          qrCodeValue: o.qrCodeValue || `https://tropicalgyros.demo/order/${orderId}`,
+        };
+        return NextResponse.json({ success: true, data: normalized, order: normalized }, { headers: corsHeaders() });
       }
-      const fallback = initialOrders.find((o) => o.id === orderId);
-      return NextResponse.json({ success: true, data: fallback, order: fallback }, { headers: corsHeaders() });
+      return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404, headers: corsHeaders() });
     }
 
     // 5. Admins
     if (path === 'superadmin/admins' || path === 'admin/admins' || path === 'admin/staff') {
       const col = db.collection('admins');
-      let items = await col.find({}).toArray();
-      if (!items || items.length === 0) {
-        items = initialAdminAccounts as any;
-      }
+      const items = await col.find({}).toArray();
       return NextResponse.json(
-        { success: true, data: dedupeById(items) },
+        { success: true, data: dedupeById(items || []) },
         { headers: corsHeaders() }
       );
     }
@@ -157,12 +242,9 @@ export async function GET(
     // 6. Roles
     if (path === 'superadmin/roles') {
       const col = db.collection('roles');
-      let items = await col.find({}).toArray();
-      if (!items || items.length === 0) {
-        items = initialCustomRoles as any;
-      }
+      const items = await col.find({}).toArray();
       return NextResponse.json(
-        { success: true, data: dedupeById(items) },
+        { success: true, data: dedupeById(items || []) },
         { headers: corsHeaders() }
       );
     }
@@ -170,12 +252,9 @@ export async function GET(
     // 7. Delivery Staff
     if (path === 'superadmin/delivery-staff' || path === 'admin/delivery-staff') {
       const col = db.collection('drivers');
-      let items = await col.find({}).toArray();
-      if (!items || items.length === 0) {
-        items = initialDrivers as any;
-      }
+      const items = await col.find({}).toArray();
       return NextResponse.json(
-        { success: true, data: dedupeById(items) },
+        { success: true, data: dedupeById(items || []) },
         { headers: corsHeaders() }
       );
     }
@@ -183,12 +262,9 @@ export async function GET(
     // 8. Customers
     if (path === 'superadmin/customers' || path === 'admin/customers') {
       const col = db.collection('customers');
-      let items = await col.find({}).toArray();
-      if (!items || items.length === 0) {
-        items = initialCustomers as any;
-      }
+      const items = await col.find({}).toArray();
       return NextResponse.json(
-        { success: true, data: dedupeById(items) },
+        { success: true, data: dedupeById(items || []) },
         { headers: corsHeaders() }
       );
     }
@@ -210,11 +286,11 @@ export async function GET(
     if (path === 'superadmin/dashboard' || path === 'admin/dashboard') {
       const ordersCol = db.collection('orders');
       const orders = await ordersCol.find({}).toArray();
-      const allOrders = orders.length > 0 ? orders : initialOrders;
+      const allOrders = orders || [];
 
       const totalRevenue = allOrders
-        .filter((o: any) => o.paymentStatus === 'paid' || o.orderStatus === 'delivered' || o.orderStatus === 'completed')
-        .reduce((sum: number, o: any) => sum + (Number(o.totalBsd) || 0), 0);
+        .filter((o: any) => o.paymentStatus === 'paid' || o.orderStatus === 'delivered' || o.orderStatus === 'completed' || o.isPaid)
+        .reduce((sum: number, o: any) => sum + (Number(o.total ?? o.pricing?.total ?? o.totalBsd) || 0), 0);
 
       return NextResponse.json(
         {
@@ -222,8 +298,8 @@ export async function GET(
           data: {
             totalRevenueBsd: Number(totalRevenue.toFixed(2)),
             todayOrdersCount: allOrders.length,
-            activeDeliveriesCount: allOrders.filter((o: any) => o.orderStatus === 'out_for_delivery' || o.orderStatus === 'preparing').length,
-            pendingOrdersCount: allOrders.filter((o: any) => o.orderStatus === 'pending' || o.orderStatus === 'processing').length,
+            activeDeliveriesCount: allOrders.filter((o: any) => o.orderStatus === 'out_for_delivery' || o.orderStatus === 'preparing' || o.status === 'out_for_delivery').length,
+            pendingOrdersCount: allOrders.filter((o: any) => o.orderStatus === 'pending' || o.orderStatus === 'processing' || o.status === 'processing').length,
           },
         },
         { headers: corsHeaders() }

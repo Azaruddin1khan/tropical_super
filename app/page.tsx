@@ -229,33 +229,41 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-slate-100">
-              {admins.map((admin) => (
-                <div key={admin.id} className="p-4 flex items-center justify-between hover:bg-slate-50/60 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-700 text-xs border border-slate-200">
-                      {admin.name.slice(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                        <span>{admin.name}</span>
-                        {admin.status === 'active' ? (
-                          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        ) : (
-                          <span className="w-2 h-2 rounded-full bg-slate-300"></span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-slate-500">{admin.roleTitle} • {admin.email}</div>
-                    </div>
-                  </div>
-
-                  <Link href={`/permissions?adminId=${admin.id}`}>
-                    <Button variant="ghost" size="sm" className="text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50">
-                      <KeyRound className="w-3.5 h-3.5 mr-1" />
-                      Permissions
-                    </Button>
-                  </Link>
+              {admins.length === 0 ? (
+                <div className="p-8 text-center text-slate-400">
+                  <ShieldCheck className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                  <p className="text-sm font-medium text-slate-600">No Admin Accounts Provisioned</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Staff accounts created for the admin panel will appear here</p>
                 </div>
-              ))}
+              ) : (
+                admins.map((admin) => (
+                  <div key={admin.id} className="p-4 flex items-center justify-between hover:bg-slate-50/60 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-700 text-xs border border-slate-200">
+                        {admin.name.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                          <span>{admin.name}</span>
+                          {admin.status === 'active' ? (
+                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                          ) : (
+                            <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-slate-500">{admin.roleTitle} • {admin.email}</div>
+                      </div>
+                    </div>
+
+                    <Link href={`/permissions?adminId=${admin.id}`}>
+                      <Button variant="ghost" size="sm" className="text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50">
+                        <KeyRound className="w-3.5 h-3.5 mr-1" />
+                        Permissions
+                      </Button>
+                    </Link>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -278,22 +286,30 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-slate-100">
-              {activityLogs.slice(0, 4).map((log) => (
-                <div key={log.id} className="p-4 hover:bg-slate-50/60 transition-colors">
-                  <div className="flex items-center justify-between text-[11px] text-slate-500">
-                    <span className="font-semibold text-slate-800">{log.adminName}</span>
-                    <span>{formatDate(log.timestamp)}</span>
-                  </div>
-                  <p className="text-xs text-slate-700 mt-1 leading-relaxed">
-                    {log.description}
-                  </p>
-                  {log.targetEntity && (
-                    <span className="inline-block mt-1.5 px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-medium border border-slate-200">
-                      {log.targetEntity}
-                    </span>
-                  )}
+              {activityLogs.length === 0 ? (
+                <div className="p-8 text-center text-slate-400">
+                  <FileText className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                  <p className="text-sm font-medium text-slate-600">No Activity Logs Yet</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Operational actions and administrative events will appear here</p>
                 </div>
-              ))}
+              ) : (
+                activityLogs.slice(0, 4).map((log) => (
+                  <div key={log.id} className="p-4 hover:bg-slate-50/60 transition-colors">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                      <span className="font-semibold text-slate-800">{log.adminName}</span>
+                      <span>{formatDate(log.timestamp)}</span>
+                    </div>
+                    <p className="text-xs text-slate-700 mt-1 leading-relaxed">
+                      {log.description}
+                    </p>
+                    {log.targetEntity && (
+                      <span className="inline-block mt-1.5 px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-medium border border-slate-200">
+                        {log.targetEntity}
+                      </span>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>

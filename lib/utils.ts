@@ -11,11 +11,12 @@ export function cn(...inputs: ClassValue[]) {
  * Example: BSD 14.50
  */
 export function formatCurrency(amount: number): string {
+  const safeAmount = typeof amount === 'number' && !isNaN(amount) ? amount : 0;
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'BSD',
   })
-    .format(amount)
+    .format(safeAmount)
     .replace(/\u00a0/g, ' ');
 }
 

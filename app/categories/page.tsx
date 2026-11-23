@@ -144,8 +144,26 @@ export default function CategoriesPage() {
         </div>
 
         {/* Categories Grid matching Screenshot 3 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categories.map((category) => {
+        {categories.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm">
+            <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 border border-amber-200">
+              <Layers className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800">No Categories Found</h3>
+            <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+              No menu categories are configured yet. Add your first category to get started.
+            </p>
+            <Button
+              onClick={openAddModal}
+              className="mt-5 bg-amber-600 hover:bg-amber-700 text-white font-bold"
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              Add Category
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {categories.map((category) => {
             const actualCount = products.filter((p) => p.categoryId === category.id).length;
 
             return (
@@ -242,6 +260,7 @@ export default function CategoriesPage() {
             );
           })}
         </div>
+        )}
       </div>
 
       {/* Add / Edit Category Modal matching Screenshot */}

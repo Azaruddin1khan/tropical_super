@@ -164,9 +164,20 @@ export default function CustomersPage() {
               <tbody className="divide-y divide-slate-100">
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-400">
-                      <AlertCircle className="w-10 h-10 mx-auto text-slate-300 mb-2" />
-                      <p className="font-medium text-slate-600">No users found</p>
+                    <td colSpan={7} className="py-16 text-center">
+                      <div className="flex flex-col items-center justify-center max-w-sm mx-auto px-4">
+                        <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 mb-3 shadow-xs">
+                          <Users className="w-8 h-8 text-amber-600" />
+                        </div>
+                        <h3 className="text-base font-bold text-slate-800">
+                          {customers.length === 0 ? 'No Customers Found' : 'No Matching Customers'}
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                          {customers.length === 0
+                            ? 'Customer accounts registered via the mobile application will automatically appear here.'
+                            : 'Try adjusting your status filter or search keywords.'}
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (

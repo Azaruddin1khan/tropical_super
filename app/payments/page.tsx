@@ -141,8 +141,9 @@ export default function PaymentsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1.5 rounded-full border border-emerald-300">
-              Gateway Simulation Active
+            <span className="text-xs bg-emerald-50 text-emerald-800 font-bold px-3 py-1.5 rounded-full border border-emerald-200 flex items-center gap-1.5 shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Live Payment Gateway
             </span>
           </div>
         </div>
@@ -304,9 +305,20 @@ export default function PaymentsPage() {
               <tbody className="divide-y divide-slate-100">
                 {filteredTransactions.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-400">
-                      <AlertCircle className="w-10 h-10 mx-auto text-slate-300 mb-2" />
-                      <p className="font-medium text-slate-600">No payment records found</p>
+                    <td colSpan={8} className="py-16 text-center">
+                      <div className="flex flex-col items-center justify-center max-w-sm mx-auto px-4">
+                        <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mb-3 shadow-xs">
+                          <DollarSign className="w-8 h-8 text-emerald-600" />
+                        </div>
+                        <h3 className="text-base font-bold text-slate-800">
+                          {orders.length === 0 ? 'No Payment Transactions Yet' : 'No Transactions Found'}
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                          {orders.length === 0
+                            ? 'Customer payment transactions will automatically record here once orders are placed.'
+                            : 'No payment records match your active channel or search filter.'}
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (

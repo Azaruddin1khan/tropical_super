@@ -20,6 +20,7 @@ import {
   Eye,
   Check,
   Flame,
+  ShoppingBag,
 } from 'lucide-react';
 import { SuperAdminLayout } from '@/components/layout/super-admin-layout';
 import { Button } from '@/components/ui/button';
@@ -123,8 +124,9 @@ export default function OrdersPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs bg-amber-100 text-amber-800 font-bold px-3 py-1.5 rounded-full border border-amber-300">
-              {orders.length} Active Simulated Orders
+            <span className="text-xs bg-emerald-50 text-emerald-800 font-bold px-3 py-1.5 rounded-full border border-emerald-200 flex items-center gap-1.5 shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              {orders.length} {orders.length === 1 ? 'Live Order' : 'Live Orders'}
             </span>
           </div>
         </div>
@@ -216,10 +218,34 @@ export default function OrdersPage() {
               <tbody className="divide-y divide-slate-100">
                 {filteredOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-400">
-                      <AlertCircle className="w-10 h-10 mx-auto text-slate-300 mb-2" />
-                      <p className="font-medium text-slate-600">No orders found</p>
-                      <p className="text-xs text-slate-400 mt-1">Try adjusting your filters or search keywords</p>
+                    <td colSpan={8} className="py-16 text-center">
+                      <div className="flex flex-col items-center justify-center max-w-md mx-auto px-4">
+                        <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 mb-3 shadow-xs">
+                          <ShoppingBag className="w-8 h-8 text-amber-600" />
+                        </div>
+                        <h3 className="text-base font-bold text-slate-800">
+                          {orders.length === 0 ? 'No Orders Yet' : 'No Orders Found'}
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                          {orders.length === 0
+                            ? 'Real-time orders placed by customers from the Tropical Gyros mobile app will appear here automatically.'
+                            : 'No orders match your selected status tab, search query, or payment filter.'}
+                        </p>
+                        {orders.length > 0 && (activeTab !== 'all' || paymentFilter !== 'all' || searchQuery.trim()) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-4 text-xs font-semibold text-amber-700 border-amber-300 hover:bg-amber-50"
+                            onClick={() => {
+                              setActiveTab('all');
+                              setPaymentFilter('all');
+                              setSearchQuery('');
+                            }}
+                          >
+                            Reset Filters
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -255,10 +281,10 @@ export default function OrdersPage() {
                       {/* Items */}
                       <td className="py-3.5 px-4">
                         <span className="font-medium text-slate-700 block">
-                          {order.items.reduce((s, i) => s + i.quantity, 0)} items
+                          {(order.items || []).reduce((s, i) => s + (i.quantity || 1), 0)} items
                         </span>
                         <span className="text-xs text-slate-500 truncate block max-w-[160px]">
-                          {order.items.map((i) => `${i.quantity}x ${i.productName}`).join(', ')}
+                          {(order.items || []).map((i) => `${i.quantity || 1}x ${i.productName || (i as any).name || 'Gyro Item'}`).join(', ')}
                         </span>
                       </td>
 

@@ -81,8 +81,8 @@ export default function ReportsPage() {
             <strong>Audit Traceability Active:</strong> All changes to permissions, order statuses, driver assignments, and menu prices are logged with the executing user and timestamp.
           </div>
         </div>
-        <span className="text-[10px] bg-amber-200/80 text-amber-900 font-bold px-2 py-0.5 rounded uppercase">
-          Live Mock / Ready for Backend Sync
+        <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full uppercase border border-emerald-200">
+          Real-time Audit Logs
         </span>
       </div>
 
@@ -131,7 +131,16 @@ export default function ReportsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-                {filteredLogs.map((log) => (
+                {filteredLogs.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-slate-400">
+                      <AlertCircle className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                      <p className="font-medium text-slate-600">No activity logs found</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Administrative events and system updates will appear here</p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredLogs.map((log) => (
                   <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <div className="font-bold text-slate-900">{formatDate(log.timestamp)}</div>
@@ -165,7 +174,8 @@ export default function ReportsPage() {
                       )}
                     </td>
                   </tr>
-                ))}
+                ))
+              )}
               </tbody>
             </table>
           </div>

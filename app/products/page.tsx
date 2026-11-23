@@ -266,8 +266,15 @@ export default function ProductsPage() {
 
         {/* CARD GRID VIEW matching Screenshot 2 */}
         {viewMode === 'cards' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredProducts.map((product) => (
+          filteredProducts.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm">
+              <AlertCircle className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+              <h3 className="text-base font-bold text-slate-800">No dishes match criteria</h3>
+              <p className="text-xs text-slate-400 mt-1">Try selecting a different category or clearing your search</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredProducts.map((product) => (
               <Card
                 key={product.id}
                 className="overflow-hidden hover:shadow-md transition-all flex flex-col justify-between"
@@ -369,6 +376,7 @@ export default function ProductsPage() {
               </Card>
             ))}
           </div>
+          )
         ) : (
           /* TABLE VIEW */
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -386,7 +394,16 @@ export default function ProductsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredProducts.map((product) => (
+                  {filteredProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-slate-400">
+                        <AlertCircle className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                        <p className="font-medium text-slate-600">No dishes match criteria</p>
+                        <p className="text-xs text-slate-400 mt-0.5">Try selecting a different category or clearing search</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredProducts.map((product) => (
                     <tr key={product.id} className="hover:bg-amber-50/20 transition-colors">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
@@ -479,7 +496,8 @@ export default function ProductsPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ))
+                )}
                 </tbody>
               </table>
             </div>

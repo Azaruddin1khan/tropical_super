@@ -287,9 +287,20 @@ export default function DeliveryStaffPage() {
               <tbody className="divide-y divide-slate-100">
                 {filteredDrivers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-400">
-                      <AlertCircle className="w-10 h-10 mx-auto text-slate-300 mb-2" />
-                      <p className="font-medium text-slate-600">No couriers found</p>
+                    <td colSpan={6} className="py-16 text-center">
+                      <div className="flex flex-col items-center justify-center max-w-sm mx-auto px-4">
+                        <div className="w-16 h-16 rounded-2xl bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-600 mb-3 shadow-xs">
+                          <Bike className="w-8 h-8 text-sky-600" />
+                        </div>
+                        <h3 className="text-base font-bold text-slate-800">
+                          {drivers.length === 0 ? 'No Couriers Found' : 'No Matching Couriers'}
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                          {drivers.length === 0
+                            ? 'No active couriers registered. Add delivery drivers to handle island deliveries.'
+                            : 'Try adjusting your search criteria or status filter.'}
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (

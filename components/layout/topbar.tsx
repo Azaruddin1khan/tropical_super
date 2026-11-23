@@ -13,6 +13,7 @@ import {
   KeyRound,
   ShieldCheck,
   ShoppingBag,
+  LogOut,
 } from 'lucide-react';
 import { useSuperAdmin } from '@/context/super-admin-context';
 import { formatCurrency, formatShortDate } from '@/lib/utils';
@@ -216,6 +217,23 @@ export function Topbar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
                   <ExternalLink className="w-4 h-4 text-slate-400" />
                   Existing Admin Panel
                 </a>
+              </div>
+
+              <div className="pt-1 border-t border-slate-100">
+                <Link
+                  href="/login"
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    if (typeof window !== 'undefined') {
+                      localStorage.removeItem('superadmin_token');
+                      localStorage.removeItem('superadmin_user');
+                    }
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </Link>
               </div>
             </div>
           )}

@@ -6,7 +6,10 @@
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
-async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<{ success: boolean; data?: T; error?: string }> {
+async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<{ success: boolean; data?: T; error?: string; [key: string]: any }> {
   try {
     const res = await fetch(`${API_BASE}${endpoint}`, {
       headers: {
@@ -25,6 +28,33 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
 }
 
 export const SuperAdminApi = {
+  // 0. Auth & Session
+  login: (email: string, password?: string) =>
+    apiRequest<any>('/api/superadmin/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
+  forgotPassword: (email: string) =>
+    apiRequest<any>('/api/superadmin/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  verifyResetCode: (email: string, otp: string) =>
+    apiRequest<any>('/api/superadmin/verify-reset-code', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+    }),
+  resetPassword: (payload: { email: string; otp?: string; token?: string; newPassword: string }) =>
+    apiRequest<any>('/api/superadmin/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  changePassword: (payload: { email: string; currentPassword: string; newPassword: string }) =>
+    apiRequest<any>('/api/superadmin/change-password', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
   // 1. Dashboard
   getDashboard: () => apiRequest<any>('/api/superadmin/dashboard'),
 

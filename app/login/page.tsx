@@ -195,14 +195,62 @@ export default function SuperAdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50/80 via-slate-50 to-orange-50/70 flex flex-col justify-center items-center p-4 relative overflow-hidden select-none">
+    <div className="min-h-screen bg-[#faf8f5] bg-gradient-to-br from-amber-50/90 via-slate-50 to-orange-50/80 flex flex-col justify-center items-center p-4 relative overflow-hidden select-none">
+      {/* Background Dot Grid Pattern */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.25]"
+        style={{
+          backgroundImage: 'radial-gradient(circle, #b45309 0.75px, transparent 0.75px)',
+          backgroundSize: '24px 24px',
+        }}
+      />
+
       {/* Warm Ambient Glows */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-amber-400/25 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/2 -right-32 w-96 h-96 bg-orange-300/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-amber-300/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-40 -left-40 w-[30rem] h-[30rem] bg-amber-400/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 -right-40 w-[28rem] h-[28rem] bg-orange-400/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-40 left-1/4 w-[32rem] h-[32rem] bg-amber-300/20 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Floating Decorative Badges (Desktop) */}
+      <div className="hidden xl:flex items-center gap-3 absolute top-10 left-10 p-3.5 rounded-2xl bg-white/85 backdrop-blur-md border border-amber-200/60 shadow-lg shadow-amber-900/5 animate-in fade-in duration-700 pointer-events-none">
+        <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-700 flex items-center justify-center text-xl">
+          🌴
+        </div>
+        <div>
+          <p className="text-xs font-bold text-slate-900">Palmdale, Nassau</p>
+          <p className="text-[10px] text-slate-500">Rosetta St & Mackey St • The Bahamas</p>
+        </div>
+      </div>
+
+      <div className="hidden xl:flex items-center gap-3 absolute top-10 right-10 p-3.5 rounded-2xl bg-white/85 backdrop-blur-md border border-emerald-200/60 shadow-lg shadow-emerald-900/5 animate-in fade-in duration-700 pointer-events-none">
+        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse ml-1" />
+        <div>
+          <p className="text-xs font-bold text-slate-900">Live Governance Console</p>
+          <p className="text-[10px] text-emerald-600 font-semibold">Tier-1 Master Authority</p>
+        </div>
+      </div>
+
+      <div className="hidden xl:flex items-center gap-3 absolute bottom-10 left-10 p-3.5 rounded-2xl bg-white/85 backdrop-blur-md border border-slate-200/80 shadow-lg shadow-slate-900/5 animate-in fade-in duration-700 pointer-events-none">
+        <div className="w-10 h-10 rounded-xl bg-sky-500/15 text-sky-700 flex items-center justify-center text-xl">
+          🥙
+        </div>
+        <div>
+          <p className="text-xs font-bold text-slate-900">Authentic Mediterranean & Bahamian</p>
+          <p className="text-[10px] text-slate-500">Meat Gyros, Seafood, Salads & Drinks</p>
+        </div>
+      </div>
+
+      <div className="hidden xl:flex items-center gap-3 absolute bottom-10 right-10 p-3.5 rounded-2xl bg-white/85 backdrop-blur-md border border-amber-200/60 shadow-lg shadow-amber-900/5 animate-in fade-in duration-700 pointer-events-none">
+        <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-900 flex items-center justify-center font-black text-xs">
+          BSD
+        </div>
+        <div>
+          <p className="text-xs font-bold text-slate-900">Bahamian Dollar Standard</p>
+          <p className="text-[10px] text-slate-500">Multi-Panel Synchronization</p>
+        </div>
+      </div>
 
       {/* Main Container */}
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl shadow-slate-300/70 border border-slate-200/80 overflow-hidden relative z-10 animate-in fade-in zoom-in-95 duration-200">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(217,119,6,0.18),0_10px_25px_-5px_rgba(0,0,0,0.06)] border border-amber-200/50 overflow-hidden relative z-10 animate-in fade-in zoom-in-95 duration-200">
         {/* Brand Banner */}
         <div className="bg-gradient-to-br from-amber-500 via-amber-400 to-amber-500 p-8 text-center relative">
           <div className="w-48 h-20 mx-auto rounded-2xl overflow-hidden border-2 border-white shadow-lg bg-white relative mb-3">

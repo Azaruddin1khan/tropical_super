@@ -9,6 +9,10 @@ interface SendOtpEmailParams {
 export async function sendVerificationEmail({ to, name = 'Admin Staff', otp }: SendOtpEmailParams): Promise<{ success: boolean; error?: string }> {
   const user = process.env.SMTP_USER || process.env.EMAIL_USER;
   const pass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT) || 465;
+  const secure = process.env.SMTP_SECURE ? process.env.SMTP_SECURE === 'true' : port === 465;
+  const from = process.env.EMAIL_FROM || process.env.SMTP_FROM || `"Tropical Gyros HQ" <${user}>`;
 
   if (!user || !pass) {
     console.warn(`[Mailer] Notice: SMTP credentials not set. OTP for ${to} is: ${otp}`);
@@ -16,13 +20,19 @@ export async function sendVerificationEmail({ to, name = 'Admin Staff', otp }: S
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user,
-        pass,
-      },
-    });
+    const cleanPass = pass.replace(/\s+/g, '');
+    const transporter = host
+      ? nodemailer.createTransport({
+          host,
+          port,
+          secure,
+          auth: { user, pass: cleanPass },
+          tls: { rejectUnauthorized: false },
+        })
+      : nodemailer.createTransport({
+          service: 'gmail',
+          auth: { user, pass: cleanPass },
+        });
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -73,7 +83,7 @@ export async function sendVerificationEmail({ to, name = 'Admin Staff', otp }: S
     `;
 
     await transporter.sendMail({
-      from: `"Tropical Gyros HQ" <${user}>`,
+      from,
       to,
       subject: `Your Verification Code: ${otp} — Tropical Gyros Admin`,
       html: htmlContent,

@@ -499,9 +499,165 @@ export async function POST(
 
       await col.updateOne({ id: orderId }, { $set: newOrder }, { upsert: true });
 
+      // Live sync customer into customers collection for Super Admin User Management
+      try {
+        const custCol = db.collection('customers');
+        const custEmail = (cleanBody.customerEmail || 'customer@tropicalgyros.com').toLowerCase().trim();
+        const existingCust = await custCol.findOne({
+          $or: [{ email: custEmail }, { phone: recipientPhone }]
+        });
+        if (existingCust) {
+          await custCol.updateOne(
+            { id: existingCust.id },
+            {
+              $inc: { totalOrders: 1, totalSpent: newOrder.total },
+              $set: { updatedAt: new Date().toISOString() }
+            }
+          );
+        } else {
+          const newCust = {
+            id: `cust-${Date.now()}`,
+            name: recipientName,
+            email: custEmail,
+            phone: recipientPhone,
+            avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+            totalOrders: 1,
+            totalSpent: newOrder.total,
+            registeredDate: new Date().toISOString().split('T')[0],
+            status: 'active',
+            address: newOrder.deliveryAddress?.street || 'Nassau, Bahamas',
+            distanceMiles: newOrder.deliveryAddress?.distanceMiles || 1.5,
+            favoriteCategory: 'Gyros',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          await custCol.updateOne({ id: newCust.id }, { $set: newCust }, { upsert: true });
+        }
+      } catch (custErr) {
+        console.warn('Customer upsert notice:', custErr);
+      }
+
       return NextResponse.json(
         { success: true, order: newOrder, data: newOrder },
         { status: 201, headers: corsHeaders() }
+      );
+    }
+
+    // Customer App Auth: Register
+    if (path === 'customer/auth/register') {
+      const col = db.collection('customers');
+      const fullName = body.fullName || body.name || 'Tropical Customer';
+      const email = (body.email || '').toLowerCase().trim();
+      const phone = body.phone || '+1 (242) 555-0100';
+      const password = body.password || '';
+
+      let existing = await col.findOne({ email });
+      if (!existing && phone) {
+        existing = await col.findOne({ phone });
+      }
+
+      if (existing) {
+        return NextResponse.json(
+          {
+            success: true,
+            message: 'Account already registered',
+            profile: {
+              id: existing.id,
+              fullName: existing.name || fullName,
+              email: existing.email || email,
+              phone: existing.phone || phone,
+              avatarUrl: existing.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+              memberTier: 'Tropical Gold Member',
+              joinedDate: existing.createdAt || new Date().toISOString(),
+            },
+          },
+          { headers: corsHeaders() }
+        );
+      }
+
+      const custId = `cust-${Date.now()}`;
+      const newCustomer = {
+        id: custId,
+        name: fullName,
+        email: email || `${custId}@tropicalgyros.com`,
+        phone: phone,
+        password: password,
+        avatarUrl: body.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+        totalOrders: 0,
+        totalSpent: 0,
+        registeredDate: new Date().toISOString().split('T')[0],
+        status: 'active',
+        address: body.address || 'Nassau, Bahamas',
+        favoriteCategory: 'Gyros',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await col.updateOne({ id: custId }, { $set: newCustomer }, { upsert: true });
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Registration successful',
+          profile: {
+            id: custId,
+            fullName: newCustomer.name,
+            email: newCustomer.email,
+            phone: newCustomer.phone,
+            avatarUrl: newCustomer.avatarUrl,
+            memberTier: 'Tropical Gold Member',
+            joinedDate: newCustomer.createdAt,
+          },
+        },
+        { status: 201, headers: corsHeaders() }
+      );
+    }
+
+    // Customer App Auth: Login
+    if (path === 'customer/auth/login') {
+      const col = db.collection('customers');
+      const email = (body.email || '').toLowerCase().trim();
+
+      let customer: any = await col.findOne({ email });
+      if (!customer) {
+        // Auto-register customer so they appear in Admin Users immediately
+        const custId = `cust-${Date.now()}`;
+        const namePart = email.split('@')[0].replace(/[._-]/g, ' ');
+        const capName = namePart ? namePart.charAt(0).toUpperCase() + namePart.slice(1) : 'Tropical Guest';
+        const newCustRecord: any = {
+          id: custId,
+          name: capName || 'Tropical Guest',
+          email: email,
+          phone: body.phone || '+1 (242) 555-0100',
+          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+          totalOrders: 0,
+          totalSpent: 0,
+          registeredDate: new Date().toISOString().split('T')[0],
+          status: 'active',
+          address: 'Nassau, Bahamas',
+          favoriteCategory: 'Gyros',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        await col.updateOne({ id: custId }, { $set: newCustRecord }, { upsert: true });
+        customer = newCustRecord;
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Login successful',
+          profile: {
+            id: customer.id,
+            fullName: customer.name,
+            email: customer.email,
+            phone: customer.phone,
+            avatarUrl: customer.avatarUrl,
+            memberTier: 'Tropical Gold Member',
+            joinedDate: customer.createdAt || new Date().toISOString(),
+          },
+        },
+        { headers: corsHeaders() }
       );
     }
 

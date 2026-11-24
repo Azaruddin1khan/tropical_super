@@ -600,14 +600,37 @@ export async function POST(
       let admin: any = await col.findOne({ email: { $regex: new RegExp(`^${cleanEmail}$`, 'i') } });
 
       if (!admin) {
-        const defaultAdmin = initialAdminAccounts.find((a) => a.email.toLowerCase() === cleanEmail);
-        if (defaultAdmin) {
+        if (cleanEmail === 'superadmin@tropicalgyros.com') {
           admin = {
-            ...defaultAdmin,
+            id: 'adm-master',
+            name: 'Master Authority',
+            email: 'superadmin@tropicalgyros.com',
+            phone: '+1 (242) 555-0100',
+            roleId: 'role-superadmin',
+            roleTitle: 'Super Administrator',
+            status: 'active',
             password: 'Admin@123',
             createdAt: new Date().toISOString(),
+            permissions: {
+              orders: { viewOrders: true, viewOrderDetails: true, updateOrderStatus: true, assignDeliveryStaff: true, cancelOrders: true, printInvoice: true, exportOrders: true },
+              products: { viewProducts: true, addProducts: true, editProducts: true, deleteProducts: true, updateStockAvailability: true },
+              categories: { viewCategories: true, addCategories: true, editCategories: true, deleteCategories: true },
+              payments: { viewPayments: true, viewTransactions: true, markCashReceived: true },
+              deliveryStaff: { viewStaff: true, addStaff: true, editStaff: true, manageAssignments: true },
+              customers: { viewCustomers: true, viewCustomerDetails: true, manageCustomerAccounts: true },
+            },
           };
-          await col.updateOne({ id: admin.id }, { $set: admin }, { upsert: true });
+          await col.updateOne({ email: admin.email }, { $set: admin }, { upsert: true });
+        } else {
+          const defaultAdmin = initialAdminAccounts.find((a) => a.email.toLowerCase() === cleanEmail);
+          if (defaultAdmin) {
+            admin = {
+              ...defaultAdmin,
+              password: 'Admin@123',
+              createdAt: new Date().toISOString(),
+            };
+            await col.updateOne({ id: admin.id }, { $set: admin }, { upsert: true });
+          }
         }
       }
 

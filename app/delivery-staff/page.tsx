@@ -63,6 +63,7 @@ export default function DeliveryStaffPage() {
     name: '',
     phone: '',
     email: '',
+    password: 'StaffPass2026!',
     vehicleType: 'Electric Scooter',
     vehicleNumber: '',
   });
@@ -72,9 +73,9 @@ export default function DeliveryStaffPage() {
       if (statusFilter !== 'all' && driver.status !== statusFilter) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchName = driver.name.toLowerCase().includes(q);
-        const matchPhone = driver.phone.toLowerCase().includes(q);
-        const matchPlate = driver.vehicleNumber.toLowerCase().includes(q);
+        const matchName = (driver.name || '').toLowerCase().includes(q);
+        const matchPhone = (driver.phone || '').toLowerCase().includes(q);
+        const matchPlate = (driver.vehicleNumber || '').toLowerCase().includes(q);
         if (!matchName && !matchPhone && !matchPlate) return false;
       }
       return true;
@@ -86,6 +87,7 @@ export default function DeliveryStaffPage() {
       name: '',
       phone: '',
       email: '',
+      password: 'StaffPass2026!',
       vehicleType: 'Electric Scooter',
       vehicleNumber: '',
     });
@@ -98,6 +100,7 @@ export default function DeliveryStaffPage() {
       name: driver.name,
       phone: driver.phone,
       email: driver.email || '',
+      password: (driver as any).password || 'StaffPass2026!',
       vehicleType: driver.vehicleType,
       vehicleNumber: driver.vehicleNumber,
     });
@@ -113,6 +116,7 @@ export default function DeliveryStaffPage() {
         name: formData.name.trim(),
         phone: formData.phone.trim(),
         email: formData.email.trim(),
+        password: formData.password || 'StaffPass2026!',
         vehicleType: formData.vehicleType,
         vehicleNumber: formData.vehicleNumber.trim(),
       });
@@ -122,6 +126,7 @@ export default function DeliveryStaffPage() {
         name: formData.name.trim(),
         phone: formData.phone.trim(),
         email: formData.email.trim(),
+        password: formData.password || 'StaffPass2026!',
         vehicleType: formData.vehicleType,
         vehicleNumber: formData.vehicleNumber.trim() || 'BS-SCOOT-01',
         status: 'available',
@@ -442,7 +447,7 @@ export default function DeliveryStaffPage() {
               />
 
               <Input
-                label="Email"
+                label="Email Address *"
                 type="email"
                 placeholder="courier@tropicalgyros.com"
                 value={formData.email}
@@ -451,6 +456,14 @@ export default function DeliveryStaffPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="App Login Password *"
+                type="text"
+                placeholder="StaffPass2026!"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
+
               <Select
                 label="Vehicle Type"
                 value={formData.vehicleType}
@@ -462,14 +475,14 @@ export default function DeliveryStaffPage() {
                   { label: 'Bicycle', value: 'Bicycle' },
                 ]}
               />
-
-              <Input
-                label="License Plate / ID"
-                placeholder="BS-SCOOT-04"
-                value={formData.vehicleNumber}
-                onChange={(e) => setFormData({ ...formData, vehicleNumber: e.target.value })}
-              />
             </div>
+
+            <Input
+              label="License Plate / ID *"
+              placeholder="BS-SCOOT-04"
+              value={formData.vehicleNumber}
+              onChange={(e) => setFormData({ ...formData, vehicleNumber: e.target.value })}
+            />
 
             <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
               <Button

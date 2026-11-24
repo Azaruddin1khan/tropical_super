@@ -103,6 +103,7 @@ export const SuperAdminApi = {
   // 7. Delivery Staff & Fleet Radar
   getDrivers: () => apiRequest<any[]>('/api/superadmin/delivery-staff'),
   createDriver: (drv: any) => apiRequest<any>('/api/superadmin/delivery-staff', { method: 'POST', body: JSON.stringify(drv) }),
+  updateDriver: (id: string, updates: any) => apiRequest<any>(`/api/superadmin/delivery-staff/${id}`, { method: 'PUT', body: JSON.stringify(updates) }),
   updateDriverStatus: (id: string, status: string) => apiRequest<any>(`/api/superadmin/delivery-staff/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   getFleetRadar: () => apiRequest<any[]>('/api/superadmin/delivery-staff/fleet-radar'),
 

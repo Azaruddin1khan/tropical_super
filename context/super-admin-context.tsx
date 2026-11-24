@@ -879,7 +879,7 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
 
   const editDriver = (driver: DeliveryStaff) => {
     setDrivers((prev) => prev.map((d) => (d.id === driver.id ? driver : d)));
-    SuperAdminApi.createDriver(driver).catch(() => {});
+    SuperAdminApi.updateDriver(driver.id, driver).catch(() => {});
     showToast('Driver Updated', `${driver.name} details saved.`, 'success');
   };
 

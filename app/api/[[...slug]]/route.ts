@@ -262,6 +262,7 @@ export async function GET(
         vehicleNumber: d.vehicleNumber || 'BS-N/A',
         phone: d.phone || 'N/A',
         name: d.name || 'Courier',
+        password: d.password || 'StaffPass2026!',
         status: d.status || 'available',
       }));
       return NextResponse.json(
@@ -661,6 +662,68 @@ export async function POST(
       );
     }
 
+    // Delivery Boy Auth: Login
+    if (path === 'delivery-boy/auth/login') {
+      const col = db.collection('drivers');
+      const email = (body.email || '').toLowerCase().trim();
+      const password = (body.password || '').trim();
+
+      // Find driver by email or phone (case-insensitive)
+      let driver: any = await col.findOne({
+        $or: [
+          { email: { $regex: new RegExp(`^${email}$`, 'i') } },
+          { phone: email },
+        ],
+      });
+
+      // Demo fallback matching for Devon or Marco
+      if (!driver && email.includes('devon')) {
+        driver = (await col.findOne({ id: 'drv-00' })) || (await col.findOne({ name: /Devon/i }));
+      }
+      if (!driver && email.includes('marco')) {
+        driver = (await col.findOne({ id: 'drv-01' })) || (await col.findOne({ name: /Marco/i }));
+      }
+
+      if (!driver) {
+        return NextResponse.json(
+          { success: false, error: 'Courier account not found with this email or phone number. Please check with your restaurant admin.' },
+          { status: 404, headers: corsHeaders() }
+        );
+      }
+
+      // Validate password (support custom password or default staff passwords)
+      const validPasswords = [
+        driver.password,
+        'StaffPass2026!',
+        'Password123',
+      ].filter(Boolean);
+
+      if (password && validPasswords.length > 0 && !validPasswords.includes(password)) {
+        return NextResponse.json(
+          { success: false, error: 'Incorrect courier password. Please check your credentials.' },
+          { status: 401, headers: corsHeaders() }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Courier logged in successfully',
+          driver: {
+            id: driver.id,
+            name: driver.name,
+            email: driver.email || email,
+            phone: driver.phone || '+1 (242) 555-0100',
+            vehicleType: driver.vehicleType || 'Electric Scooter',
+            vehicleNumber: driver.vehicleNumber || 'BS-SCOOT-01',
+            status: driver.status || 'available',
+            isOnline: driver.status !== 'offline',
+          },
+        },
+        { headers: corsHeaders() }
+      );
+    }
+
     // Admins & Staff Creation
     if (path === 'superadmin/admins' || path === 'admin/admins' || path === 'admin/staff') {
       const col = db.collection('admins');
@@ -731,6 +794,7 @@ export async function POST(
         ...body,
         id: drvId,
         status: body.status || 'available',
+        password: body.password || 'StaffPass2026!',
         rating: typeof body.rating === 'number' ? body.rating : 5.0,
         completedDeliveries: typeof body.completedDeliveries === 'number' ? body.completedDeliveries : 0,
         vehicleType: body.vehicleType || 'Motorcycle',

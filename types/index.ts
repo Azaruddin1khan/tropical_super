@@ -222,6 +222,7 @@ export interface DeliveryStaff {
   name: string;
   phone: string;
   email: string;
+  password?: string;
   avatarUrl: string;
   vehicleType: string;
   vehicleNumber: string;

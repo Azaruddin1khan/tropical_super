@@ -63,10 +63,12 @@ export default function DeliveryStaffPage() {
     name: '',
     phone: '',
     email: '',
-    password: 'StaffPass2026!',
+    password: '',
     vehicleType: 'Electric Scooter',
     vehicleNumber: '',
   });
+
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const filteredDrivers = useMemo(() => {
     return drivers.filter((driver) => {
@@ -87,10 +89,11 @@ export default function DeliveryStaffPage() {
       name: '',
       phone: '',
       email: '',
-      password: 'StaffPass2026!',
+      password: '',
       vehicleType: 'Electric Scooter',
       vehicleNumber: '',
     });
+    setFormErrors({});
     setIsAddModalOpen(true);
   };
 
@@ -100,15 +103,29 @@ export default function DeliveryStaffPage() {
       name: driver.name,
       phone: driver.phone,
       email: driver.email || '',
-      password: (driver as any).password || 'StaffPass2026!',
+      password: (driver as any).password || '',
       vehicleType: driver.vehicleType,
       vehicleNumber: driver.vehicleNumber,
     });
+    setFormErrors({});
   };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.phone.trim()) return;
+    const errors: Record<string, string> = {};
+    if (!formData.name.trim()) errors.name = 'Full name is required.';
+    if (!formData.phone.trim()) errors.phone = 'Phone number is required.';
+    if (!formData.email.trim()) errors.email = 'Email address is required.';
+    if (!editingDriver && !formData.password.trim()) {
+      errors.password = 'App login password is required.';
+    } else if (formData.password.trim() && formData.password.trim().length < 4) {
+      errors.password = 'Password must be at least 4 characters.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
 
     if (editingDriver) {
       editDriver({
@@ -116,7 +133,7 @@ export default function DeliveryStaffPage() {
         name: formData.name.trim(),
         phone: formData.phone.trim(),
         email: formData.email.trim(),
-        password: formData.password || 'StaffPass2026!',
+        password: formData.password.trim() || (editingDriver as any).password || '',
         vehicleType: formData.vehicleType,
         vehicleNumber: formData.vehicleNumber.trim(),
       });
@@ -126,7 +143,7 @@ export default function DeliveryStaffPage() {
         name: formData.name.trim(),
         phone: formData.phone.trim(),
         email: formData.email.trim(),
-        password: formData.password || 'StaffPass2026!',
+        password: formData.password.trim(),
         vehicleType: formData.vehicleType,
         vehicleNumber: formData.vehicleNumber.trim() || 'BS-SCOOT-01',
         status: 'available',
@@ -436,6 +453,7 @@ export default function DeliveryStaffPage() {
               placeholder="e.g. Leo Santos"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              error={formErrors.name}
             />
 
             <div className="grid grid-cols-2 gap-3">
@@ -444,6 +462,7 @@ export default function DeliveryStaffPage() {
                 placeholder="+1 (555) 019-2831"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                error={formErrors.phone}
               />
 
               <Input
@@ -452,6 +471,7 @@ export default function DeliveryStaffPage() {
                 placeholder="courier@tropicalgyros.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                error={formErrors.email}
               />
             </div>
 
@@ -459,9 +479,10 @@ export default function DeliveryStaffPage() {
               <Input
                 label="App Login Password *"
                 type="text"
-                placeholder="StaffPass2026!"
+                placeholder="Enter courier login password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                error={formErrors.password}
               />
 
               <Select
@@ -482,6 +503,7 @@ export default function DeliveryStaffPage() {
               placeholder="BS-SCOOT-04"
               value={formData.vehicleNumber}
               onChange={(e) => setFormData({ ...formData, vehicleNumber: e.target.value })}
+              error={formErrors.vehicleNumber}
             />
 
             <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">

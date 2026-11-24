@@ -262,7 +262,7 @@ export async function GET(
         vehicleNumber: d.vehicleNumber || 'BS-N/A',
         phone: d.phone || 'N/A',
         name: d.name || 'Courier',
-        password: d.password || 'StaffPass2026!',
+        password: d.password || '',
         status: d.status || 'available',
       }));
       return NextResponse.json(
@@ -692,8 +692,8 @@ export async function POST(
       }
 
       // Strictly validate password against database record
-      const expectedPassword = driver.password || 'StaffPass2026!';
-      if (!password || password !== expectedPassword) {
+      const expectedPassword = (driver.password || '').trim();
+      if (!expectedPassword || !password || password.trim() !== expectedPassword) {
         return NextResponse.json(
           { success: false, error: 'Incorrect courier password. Please check your credentials.' },
           { status: 401, headers: corsHeaders() }
@@ -789,7 +789,7 @@ export async function POST(
         ...body,
         id: drvId,
         status: body.status || 'available',
-        password: body.password || 'StaffPass2026!',
+        password: (body.password || '').trim(),
         rating: typeof body.rating === 'number' ? body.rating : 5.0,
         completedDeliveries: typeof body.completedDeliveries === 'number' ? body.completedDeliveries : 0,
         vehicleType: body.vehicleType || 'Motorcycle',

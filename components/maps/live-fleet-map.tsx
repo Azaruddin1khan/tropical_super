@@ -545,11 +545,11 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
       {/* Main Map + Live Telemetry Split Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-stretch">
         {/* Left 3 Columns: Interactive Leaflet Map Container */}
-        <div className="lg:col-span-3 rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm bg-slate-100 relative h-[620px]">
+        <div className="lg:col-span-3 rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm bg-slate-100 relative h-[620px] isolate">
           <div ref={mapContainerRef} className="absolute inset-0 z-0 w-full h-full" />
 
           {/* Top-Left Floating Map Overlay Badge */}
-          <div className="absolute top-3 left-3 z-[1000] bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-200 shadow-md flex items-center gap-2 text-xs font-bold text-slate-800 pointer-events-none">
+          <div className="absolute top-3 left-3 z-10 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-200 shadow-md flex items-center gap-2 text-xs font-bold text-slate-800 pointer-events-none">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
             <span>Live GPS Telemetry</span>
             <span className="text-slate-300">|</span>
@@ -559,7 +559,7 @@ export function LiveFleetMap({ drivers, orders }: LiveFleetMapProps) {
           </div>
 
           {/* Bottom-Left Floating Operational Radius Badge */}
-          <div className="absolute bottom-3 left-3 z-[1000] bg-slate-950/90 backdrop-blur-md text-white text-[11px] font-medium px-3 py-1.5 rounded-xl shadow-lg border border-slate-800 flex items-center gap-2 pointer-events-none">
+          <div className="absolute bottom-3 left-3 z-10 bg-slate-950/90 backdrop-blur-md text-white text-[11px] font-medium px-3 py-1.5 rounded-xl shadow-lg border border-slate-800 flex items-center gap-2 pointer-events-none">
             <span className="w-2 h-2 rounded-full bg-amber-400" />
             <span>3.0-Mile Operational Dispatch Radius (Bahamas Standard)</span>
           </div>

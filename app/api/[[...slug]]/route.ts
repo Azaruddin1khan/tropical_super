@@ -719,6 +719,187 @@ export async function POST(
       );
     }
 
+    // Delivery Boy Auth: Forgot Password (Send OTP)
+    if (path === 'delivery-boy/auth/forgot-password') {
+      const { email } = body || {};
+      const cleanEmail = (email || '').trim().toLowerCase();
+      if (!cleanEmail) {
+        return NextResponse.json(
+          { success: false, error: 'Email address or phone number is required' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      const col = db.collection('drivers');
+      const driver: any = await col.findOne({
+        $or: [
+          { email: { $regex: new RegExp(`^${cleanEmail}$`, 'i') } },
+          { phone: cleanEmail },
+        ],
+      });
+
+      if (!driver) {
+        return NextResponse.json(
+          { success: false, error: 'No courier account found with this email or phone number.' },
+          { status: 404, headers: corsHeaders() }
+        );
+      }
+
+      const targetEmail = driver.email || cleanEmail;
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const token = `drv_rst_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+      const resetsCol = db.collection('password_resets');
+      await resetsCol.insertOne({
+        email: targetEmail.toLowerCase().trim(),
+        driverId: driver.id,
+        driverName: driver.name,
+        otp,
+        token,
+        role: 'delivery-boy',
+        expiresAt,
+        used: false,
+        createdAt: new Date(),
+      });
+
+      // Send verification email via SMTP if configured
+      const mailResult = await sendVerificationEmail({
+        to: targetEmail,
+        name: driver.name || 'Courier',
+        otp,
+      }).catch((err) => ({ success: false, error: err?.message }));
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: mailResult.success
+            ? `Verification code has been sent directly to ${targetEmail}`
+            : `Verification code generated for ${targetEmail}`,
+          token,
+          email: targetEmail,
+          emailSent: Boolean(mailResult.success),
+          demoOtp: !mailResult.success ? otp : undefined,
+          expiresInMinutes: 15,
+        },
+        { headers: corsHeaders() }
+      );
+    }
+
+    // Delivery Boy Auth: Verify OTP
+    if (path === 'delivery-boy/auth/verify-otp') {
+      const { email, otp } = body || {};
+      const cleanEmail = (email || '').trim().toLowerCase();
+      const cleanOtp = (otp || '').trim();
+
+      if (!cleanEmail || !cleanOtp) {
+        return NextResponse.json(
+          { success: false, error: 'Email and verification code are required' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      const resetsCol = db.collection('password_resets');
+      const resetRecord = await resetsCol.findOne({
+        email: cleanEmail,
+        otp: cleanOtp,
+        used: false,
+        expiresAt: { $gt: new Date() },
+      });
+
+      if (!resetRecord) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid or expired verification code' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          valid: true,
+          token: resetRecord.token,
+          message: 'Verification code verified successfully',
+        },
+        { headers: corsHeaders() }
+      );
+    }
+
+    // Delivery Boy Auth: Reset Password
+    if (path === 'delivery-boy/auth/reset-password') {
+      const { email, otp, token, newPassword } = body || {};
+      const cleanEmail = (email || '').trim().toLowerCase();
+
+      if (!cleanEmail) {
+        return NextResponse.json(
+          { success: false, error: 'Email address is required' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      if (!newPassword || newPassword.trim().length < 4) {
+        return NextResponse.json(
+          { success: false, error: 'New password must be at least 4 characters' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      const resetsCol = db.collection('password_resets');
+      const query: any = {
+        email: cleanEmail,
+        used: false,
+        expiresAt: { $gt: new Date() },
+      };
+
+      if (token) {
+        query.token = token;
+      } else if (otp) {
+        query.otp = otp.trim();
+      } else {
+        return NextResponse.json(
+          { success: false, error: 'Verification code or reset token is required' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      const resetRecord = await resetsCol.findOne(query);
+      if (!resetRecord) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid, expired, or already used reset request' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      await resetsCol.updateOne(
+        { _id: resetRecord._id },
+        { $set: { used: true, usedAt: new Date() } }
+      );
+
+      const driversCol = db.collection('drivers');
+      await driversCol.updateOne(
+        {
+          $or: [
+            { email: { $regex: new RegExp(`^${cleanEmail}$`, 'i') } },
+            { id: resetRecord.driverId },
+          ],
+        },
+        {
+          $set: {
+            password: newPassword.trim(),
+            updatedAt: new Date().toISOString(),
+          },
+        }
+      );
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Courier password reset successfully! You can now log in with your new password.',
+        },
+        { headers: corsHeaders() }
+      );
+    }
+
     // Admins & Staff Creation
     if (path === 'superadmin/admins' || path === 'admin/admins' || path === 'admin/staff') {
       const col = db.collection('admins');

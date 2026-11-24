@@ -308,7 +308,17 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
           } catch {}
         }
         if (driversRes.status === 'fulfilled' && driversRes.value.success && Array.isArray(driversRes.value.data)) {
-          const drvs = dedupeById<DeliveryStaff>(driversRes.value.data);
+          const normalized = (driversRes.value.data as any[]).map((d) => ({
+            ...d,
+            rating: typeof d.rating === 'number' ? d.rating : 5.0,
+            completedDeliveries: typeof d.completedDeliveries === 'number' ? d.completedDeliveries : 0,
+            vehicleType: d.vehicleType || 'Motorcycle',
+            vehicleNumber: d.vehicleNumber || 'BS-N/A',
+            phone: d.phone || 'N/A',
+            name: d.name || 'Courier',
+            status: d.status || 'available',
+          }));
+          const drvs = dedupeById<DeliveryStaff>(normalized as DeliveryStaff[]);
           setDrivers(drvs);
         }
         if (customersRes.status === 'fulfilled' && customersRes.value.success && Array.isArray(customersRes.value.data)) {

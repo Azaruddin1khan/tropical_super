@@ -254,8 +254,18 @@ export async function GET(
     if (path === 'superadmin/delivery-staff' || path === 'admin/delivery-staff') {
       const col = db.collection('drivers');
       const items = await col.find({}).toArray();
+      const normalized = (items || []).map((d: any) => ({
+        ...d,
+        rating: typeof d.rating === 'number' ? d.rating : 5.0,
+        completedDeliveries: typeof d.completedDeliveries === 'number' ? d.completedDeliveries : 0,
+        vehicleType: d.vehicleType || 'Motorcycle',
+        vehicleNumber: d.vehicleNumber || 'BS-N/A',
+        phone: d.phone || 'N/A',
+        name: d.name || 'Courier',
+        status: d.status || 'available',
+      }));
       return NextResponse.json(
-        { success: true, data: dedupeById(items || []) },
+        { success: true, data: dedupeById(normalized) },
         { headers: corsHeaders() }
       );
     }
@@ -565,6 +575,12 @@ export async function POST(
         ...body,
         id: drvId,
         status: body.status || 'available',
+        rating: typeof body.rating === 'number' ? body.rating : 5.0,
+        completedDeliveries: typeof body.completedDeliveries === 'number' ? body.completedDeliveries : 0,
+        vehicleType: body.vehicleType || 'Motorcycle',
+        vehicleNumber: body.vehicleNumber || 'BS-N/A',
+        phone: body.phone || 'N/A',
+        name: body.name || 'Courier',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };

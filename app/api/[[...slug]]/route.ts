@@ -691,14 +691,9 @@ export async function POST(
         );
       }
 
-      // Validate password (support custom password or default staff passwords)
-      const validPasswords = [
-        driver.password,
-        'StaffPass2026!',
-        'Password123',
-      ].filter(Boolean);
-
-      if (password && validPasswords.length > 0 && !validPasswords.includes(password)) {
+      // Strictly validate password against database record
+      const expectedPassword = driver.password || 'StaffPass2026!';
+      if (!password || password !== expectedPassword) {
         return NextResponse.json(
           { success: false, error: 'Incorrect courier password. Please check your credentials.' },
           { status: 401, headers: corsHeaders() }

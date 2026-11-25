@@ -25,6 +25,7 @@ import {
 import { SuperAdminLayout } from '@/components/layout/super-admin-layout';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
+import { InvoiceModal } from '@/components/invoice/invoice-modal';
 import { OrderStatusBadge, PaymentStatusBadge, DriverStatusBadge } from '@/components/ui/badge';
 import { useSuperAdmin } from '@/context/super-admin-context';
 import { Order, OrderStatus } from '@/types';
@@ -58,6 +59,7 @@ export default function OrdersPage() {
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'total_desc' | 'total_asc'>('date_desc');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [printingInvoiceOrder, setPrintingInvoiceOrder] = useState<Order | null>(null);
   const [assigningDriverOrderId, setAssigningDriverOrderId] = useState<string | null>(null);
   const [selectedDriverId, setSelectedDriverId] = useState('');
 
@@ -595,7 +597,7 @@ export default function OrdersPage() {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => window.print()}
+                onClick={() => setPrintingInvoiceOrder(selectedOrder)}
               >
                 <Printer className="w-4 h-4 mr-1.5 text-slate-500" />
                 Print Order Receipt
@@ -603,6 +605,15 @@ export default function OrdersPage() {
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* Official Tax Invoice Modal */}
+      {printingInvoiceOrder && (
+        <InvoiceModal
+          isOpen={!!printingInvoiceOrder}
+          onClose={() => setPrintingInvoiceOrder(null)}
+          order={printingInvoiceOrder}
+        />
       )}
     </SuperAdminLayout>
   );

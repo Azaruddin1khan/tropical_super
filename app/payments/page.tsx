@@ -20,6 +20,7 @@ import { SuperAdminLayout } from '@/components/layout/super-admin-layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
+import { InvoiceModal } from '@/components/invoice/invoice-modal';
 import { PaymentStatusBadge } from '@/components/ui/badge';
 import { useSuperAdmin } from '@/context/super-admin-context';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -409,68 +410,14 @@ export default function PaymentsPage() {
         </div>
       </div>
 
-      {/* Payment Receipt / Inspection Modal */}
+      {/* Official Tax Invoice & Payment Receipt Modal */}
       {selectedTxn && (
-        <Modal
+        <InvoiceModal
           isOpen={!!selectedTxn}
           onClose={() => setSelectedTxn(null)}
-          title={`Payment Receipt — ${selectedTxn.id}`}
-          size="md"
-        >
-          <div className="space-y-4 text-sm">
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
-              <span className="text-xs text-slate-500 uppercase font-semibold">Settlement Amount</span>
-              <p className="text-3xl font-extrabold text-slate-900 mt-1">
-                {formatCurrency(selectedTxn.amount)}
-              </p>
-              <div className="mt-2 flex justify-center">
-                <PaymentStatusBadge status={selectedTxn.paymentStatus} />
-              </div>
-            </div>
-
-            <div className="space-y-2 text-xs divide-y divide-slate-100">
-              <div className="flex justify-between py-1.5">
-                <span className="text-slate-500">Transaction Ref</span>
-                <span className="font-mono font-medium text-slate-900">{selectedTxn.transactionRef}</span>
-              </div>
-              <div className="flex justify-between py-1.5">
-                <span className="text-slate-500">Order ID</span>
-                <span className="font-bold text-amber-700">{selectedTxn.orderId}</span>
-              </div>
-              <div className="flex justify-between py-1.5">
-                <span className="text-slate-500">Customer Name</span>
-                <span className="font-semibold text-slate-900">{selectedTxn.customerName}</span>
-              </div>
-              <div className="flex justify-between py-1.5">
-                <span className="text-slate-500">Channel / Method</span>
-                <span className="uppercase font-bold text-slate-800">{selectedTxn.paymentMethod}</span>
-              </div>
-              <div className="flex justify-between py-1.5">
-                <span className="text-slate-500">Processed At</span>
-                <span>{formatDate(selectedTxn.createdAt)}</span>
-              </div>
-              {selectedTxn.notes && (
-                <div className="flex justify-between py-1.5">
-                  <span className="text-slate-500">Notes</span>
-                  <span className="text-slate-700 italic">{selectedTxn.notes}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <Button variant="outline" onClick={() => setSelectedTxn(null)}>
-                Close
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => window.print()}
-              >
-                <Printer className="w-4 h-4 mr-1 text-slate-500" />
-                Print Receipt
-              </Button>
-            </div>
-          </div>
-        </Modal>
+          transaction={selectedTxn}
+          order={orders.find((o) => o.id === selectedTxn.orderId)}
+        />
       )}
     </SuperAdminLayout>
   );

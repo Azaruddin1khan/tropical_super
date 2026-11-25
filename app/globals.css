@@ -39,3 +39,58 @@
   background: #94a3b8;
 }
 
+/* Print optimization for professional restaurant invoices and receipts */
+@media print {
+  @page {
+    margin: 8mm 10mm;
+    size: auto;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide app navigation, headers, sidebars, and non-printable elements */
+  nav, aside, header, footer, .no-print {
+    display: none !important;
+  }
+
+  /* Reset modal backdrop so it does not dim or shrink print output */
+  .modal-backdrop-print-hide {
+    position: static !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    display: block !important;
+    z-index: auto !important;
+  }
+
+  .modal-dialog-print-expand {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .printable-invoice-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
+
+

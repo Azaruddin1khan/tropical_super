@@ -61,6 +61,13 @@
     display: none !important;
   }
 
+  /* When an invoice or modal is open, hide the background main content so it never prints 16 pages of background table data */
+  body:has(.printable-invoice-container) main,
+  body:has(.printable-invoice-container) .no-print,
+  body:has(.fixed.inset-0) main {
+    display: none !important;
+  }
+
   /* Reset modal backdrop so it does not dim or shrink print output */
   .modal-backdrop-print-hide {
     position: static !important;

@@ -597,10 +597,14 @@ export default function OrdersPage() {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => setPrintingInvoiceOrder(selectedOrder)}
+                onClick={() => {
+                  const cur = selectedOrder;
+                  setSelectedOrder(null);
+                  setPrintingInvoiceOrder(cur);
+                }}
               >
                 <Printer className="w-4 h-4 mr-1.5 text-slate-500" />
-                Print Order Receipt
+                Print Order Receipt / Invoice
               </Button>
             </div>
           </div>

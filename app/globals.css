@@ -46,39 +46,55 @@
     size: auto;
   }
 
-  body {
+  html, body {
     background: #ffffff !important;
     color: #0f172a !important;
     font-size: 11pt !important;
     margin: 0 !important;
     padding: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
   /* Hide app navigation, headers, sidebars, and non-printable elements */
-  nav, aside, header, footer, .no-print {
+  nav, aside, header, footer, .no-print, [aria-label="Close modal"] {
     display: none !important;
   }
 
-  /* When an invoice or modal is open, hide the background main content so it never prints 16 pages of background table data */
-  body:has(.printable-invoice-container) main,
-  body:has(.printable-invoice-container) .no-print,
-  body:has(.fixed.inset-0) main {
-    display: none !important;
+  /* Remove sidebar offset padding on main content wrapper during print */
+  div[class*="lg:pl-72"],
+  .lg\:pl-72 {
+    padding-left: 0 !important;
   }
 
-  /* Reset modal backdrop so it does not dim or shrink print output */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    display: block !important;
+  }
+
+  /* Reset modal backdrop so it does not dim, fix, or shrink print output */
   .modal-backdrop-print-hide {
     position: static !important;
-    background: transparent !important;
+    background: #ffffff !important;
     backdrop-filter: none !important;
     padding: 0 !important;
+    margin: 0 !important;
     display: block !important;
     z-index: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
   }
 
   .modal-dialog-print-expand {
+    position: static !important;
     max-width: 100% !important;
     width: 100% !important;
     margin: 0 !important;
@@ -87,6 +103,13 @@
     border: none !important;
     border-radius: 0 !important;
     max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  .modal-dialog-print-expand div,
+  .printable-invoice-container {
     overflow: visible !important;
   }
 
@@ -97,6 +120,12 @@
     padding: 0 !important;
     border: none !important;
     box-shadow: none !important;
+    display: block !important;
+  }
+
+  table tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }
 

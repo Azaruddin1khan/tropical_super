@@ -97,11 +97,11 @@ export function InvoiceModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150 modal-backdrop-print-hide">
-      <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col modal-dialog-print-expand">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150 modal-backdrop-print-hide print:static print:p-0 print:m-0 print:bg-white print:block print:w-full print:h-auto">
+      <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col modal-dialog-print-expand print:max-h-none print:h-auto print:overflow-visible print:border-none print:shadow-none print:w-full print:p-0 print:m-0 print:block">
         
         {/* Top Control Bar (Hidden on Print) */}
-        <div className="no-print flex items-center justify-between px-5 py-3.5 border-b border-slate-100 bg-slate-50/80">
+        <div className="no-print print:hidden flex items-center justify-between px-5 py-3.5 border-b border-slate-100 bg-slate-50/80">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600">
               <Receipt className="w-4 h-4" />
@@ -132,12 +132,12 @@ export function InvoiceModal({
         </div>
 
         {/* Scrollable Document Container */}
-        <div className="overflow-y-auto flex-1 p-4 sm:p-8 bg-slate-100/50 print:bg-white print:p-0">
+        <div className="overflow-y-auto flex-1 p-4 sm:p-8 bg-slate-100/50 print:bg-white print:p-0 print:overflow-visible print:max-h-none print:h-auto print:block">
           
           {/* Printable Sheet */}
           <div
             id="printable-invoice"
-            className="printable-invoice-container bg-white border border-slate-200 rounded-xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto print:border-none print:shadow-none print:p-0 print:max-w-none"
+            className="printable-invoice-container bg-white border border-slate-200 rounded-xl shadow-sm p-6 sm:p-8 max-w-2xl mx-auto print:border-none print:shadow-none print:p-0 print:m-0 print:max-w-none print:block"
           >
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pb-6 border-b border-slate-200">
@@ -417,7 +417,7 @@ export function InvoiceModal({
         </div>
 
         {/* Bottom Control Bar (Hidden on Print) */}
-        <div className="no-print flex items-center justify-between px-6 py-3 border-t border-slate-100 bg-white">
+        <div className="no-print print:hidden flex items-center justify-between px-6 py-3 border-t border-slate-100 bg-white">
           <p className="text-xs text-slate-500">
             Press <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-[10px] font-mono">Ctrl+P</kbd> or click Print to download PDF.
           </p>

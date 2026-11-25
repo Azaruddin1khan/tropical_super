@@ -114,7 +114,7 @@ export default function OrdersPage() {
 
   return (
     <SuperAdminLayout>
-      <div className="space-y-6">
+      <div className={`space-y-6 ${printingInvoiceOrder ? 'print:hidden' : ''}`}>
         {/* Header Title & Actions matching Screenshot 1 */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>

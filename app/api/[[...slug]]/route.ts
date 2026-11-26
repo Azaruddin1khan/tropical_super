@@ -112,9 +112,38 @@ export async function GET(
       const col = db.collection('orders');
       const email = searchParams.get('email');
       const phone = searchParams.get('phone');
+      const isCustomerEndpoint = path === 'customer/orders';
       const query: any = {};
-      if (email) query.customerEmail = email;
-      if (phone) query.customerPhone = phone;
+
+      if (email && email.trim()) {
+        const cleanEmail = email.trim();
+        const emailRegex = { $regex: new RegExp(`^${cleanEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') };
+        query.$or = [
+          { customerEmail: emailRegex },
+          { email: emailRegex },
+          { userEmail: emailRegex },
+        ];
+      } else if (isCustomerEndpoint && !phone) {
+        // Customer requested orders without email or phone: return empty list to protect customer data privacy
+        return NextResponse.json(
+          { success: true, data: [] },
+          { headers: corsHeaders() }
+        );
+      }
+
+      if (phone && phone.trim()) {
+        const cleanPhone = phone.trim();
+        const phoneClauses = [
+          { customerPhone: cleanPhone },
+          { phone: cleanPhone },
+          { 'deliveryAddress.phone': cleanPhone },
+        ];
+        if (query.$or) {
+          query.$or.push(...phoneClauses);
+        } else {
+          query.$or = phoneClauses;
+        }
+      }
 
       const rawOrders = await col.find(query).sort({ createdAt: -1 }).toArray();
       const normalizedOrders = (rawOrders || []).map((o: any) => {

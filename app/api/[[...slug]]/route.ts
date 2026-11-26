@@ -819,23 +819,22 @@ export async function POST(
         createdAt: new Date(),
       });
 
-      // Send verification email via SMTP if configured
+      // Send verification email via SMTP directly to customer's email
       const mailResult = await sendVerificationEmail({
         to: targetEmail,
         name: customer.name || 'Valued Customer',
         otp,
+        appTitle: 'Tropical Customer App',
+        subject: `Your Verification Code: ${otp} — Tropical Gyros`,
       }).catch((err: any) => ({ success: false, error: err?.message }));
 
       return NextResponse.json(
         {
           success: true,
-          message: mailResult.success
-            ? `Verification code has been sent directly to ${targetEmail}`
-            : `Verification code generated for ${targetEmail}`,
+          message: `Verification code has been sent directly to ${targetEmail}. Please check your email inbox.`,
           token,
           email: targetEmail,
           emailSent: Boolean(mailResult.success),
-          demoOtp: !mailResult.success ? otp : undefined,
           expiresInMinutes: 15,
         },
         { headers: corsHeaders() }

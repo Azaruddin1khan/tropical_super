@@ -294,6 +294,69 @@ export async function GET(
       );
     }
 
+    // Customer Account Verification & Status Check
+    if (path === 'customer/auth/verify' || path === 'customer/auth/status') {
+      const email = (searchParams.get('email') || '').toLowerCase().trim();
+      const id = searchParams.get('id');
+
+      if (!email && !id) {
+        return NextResponse.json(
+          { success: false, error: 'Email or ID is required' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      const col = db.collection('customers');
+      let customer: any = null;
+      if (email && id) {
+        customer = await col.findOne({ $or: [{ email }, { id }] });
+      } else if (email) {
+        customer = await col.findOne({ email });
+      } else if (id) {
+        customer = await col.findOne({ id });
+      }
+
+      if (!customer) {
+        return NextResponse.json(
+          {
+            success: false,
+            isDeleted: true,
+            error: 'Account no longer exists or was deleted by Super Admin.',
+          },
+          { status: 404, headers: corsHeaders() }
+        );
+      }
+
+      if (customer.status === 'inactive') {
+        return NextResponse.json(
+          {
+            success: false,
+            isBlocked: true,
+            status: 'inactive',
+            error: 'Your account has been deactivated by Super Admin. Please contact support.',
+          },
+          { status: 403, headers: corsHeaders() }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          status: 'active',
+          profile: {
+            id: customer.id,
+            fullName: customer.name,
+            email: customer.email,
+            phone: customer.phone,
+            avatarUrl: customer.avatarUrl,
+            memberTier: 'Tropical Gold Member',
+            status: customer.status,
+          },
+        },
+        { headers: corsHeaders() }
+      );
+    }
+
     // 10. Dashboard
     if (path === 'superadmin/dashboard' || path === 'admin/dashboard') {
       const ordersCol = db.collection('orders');
@@ -620,7 +683,18 @@ export async function POST(
       const email = (body.email || '').toLowerCase().trim();
 
       let customer: any = await col.findOne({ email });
-      if (!customer) {
+      if (customer) {
+        if (customer.status === 'inactive') {
+          return NextResponse.json(
+            {
+              success: false,
+              isBlocked: true,
+              error: 'Your account has been deactivated by Super Admin. Please contact support.',
+            },
+            { status: 403, headers: corsHeaders() }
+          );
+        }
+      } else {
         // Auto-register customer so they appear in Admin Users immediately
         const custId = `cust-${Date.now()}`;
         const namePart = email.split('@')[0].replace(/[._-]/g, ' ');
@@ -1646,6 +1720,14 @@ export async function DELETE(
       const col = db.collection('drivers');
       await col.deleteOne({ id });
       return NextResponse.json({ success: true, message: 'Driver deleted' }, { headers: corsHeaders() });
+    }
+
+    // Delete Customer: superadmin/customers/:id or admin/customers/:id
+    if (slug[1] === 'customers' && slug[2]) {
+      const id = slug[2];
+      const col = db.collection('customers');
+      await col.deleteOne({ id });
+      return NextResponse.json({ success: true, message: 'Customer account deleted' }, { headers: corsHeaders() });
     }
 
     return NextResponse.json(

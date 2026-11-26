@@ -681,41 +681,69 @@ export async function POST(
     if (path === 'customer/auth/login') {
       const col = db.collection('customers');
       const email = (body.email || '').toLowerCase().trim();
+      const password = (body.password || '').trim();
 
-      let customer: any = await col.findOne({ email });
-      if (customer) {
-        if (customer.status === 'inactive') {
+      if (!email || !password) {
+        return NextResponse.json(
+          { success: false, error: 'Email and password are required' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      let customer: any = await col.findOne({
+        $or: [{ email }, { phone: email }],
+      });
+
+      // Special fallback matching for demo accounts
+      if (!customer && (email === 'alex.rivera@tropicalbites.com' || email === 'alex.rivera@tropicalgyros.com')) {
+        customer = await col.findOne({ id: 'cust_1' });
+      }
+
+      if (!customer) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'No account found with this email. Please check your credentials or register.',
+          },
+          { status: 404, headers: corsHeaders() }
+        );
+      }
+
+      if (customer.status === 'inactive') {
+        return NextResponse.json(
+          {
+            success: false,
+            isBlocked: true,
+            error: 'Your account has been deactivated by Super Admin. Please contact support.',
+          },
+          { status: 403, headers: corsHeaders() }
+        );
+      }
+
+      // Strictly validate password
+      const storedPassword = (customer.password || '').trim();
+      if (storedPassword) {
+        if (password !== storedPassword) {
           return NextResponse.json(
             {
               success: false,
-              isBlocked: true,
-              error: 'Your account has been deactivated by Super Admin. Please contact support.',
+              error: 'Incorrect password. Please try again.',
             },
-            { status: 403, headers: corsHeaders() }
+            { status: 401, headers: corsHeaders() }
           );
         }
       } else {
-        // Auto-register customer so they appear in Admin Users immediately
-        const custId = `cust-${Date.now()}`;
-        const namePart = email.split('@')[0].replace(/[._-]/g, ' ');
-        const capName = namePart ? namePart.charAt(0).toUpperCase() + namePart.slice(1) : 'Tropical Guest';
-        const newCustRecord: any = {
-          id: custId,
-          name: capName || 'Tropical Guest',
-          email: email,
-          phone: body.phone || '+1 (242) 555-0100',
-          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
-          totalOrders: 0,
-          totalSpent: 0,
-          registeredDate: new Date().toISOString().split('T')[0],
-          status: 'active',
-          address: 'Nassau, Bahamas',
-          favoriteCategory: 'Gyros',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-        await col.updateOne({ id: custId }, { $set: newCustRecord }, { upsert: true });
-        customer = newCustRecord;
+        // Legacy or seed customer without password stored: check default demo password 'tropical123'
+        if (customer.email?.includes('alex.rivera') && password !== 'tropical123') {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Incorrect password. Please try again.',
+            },
+            { status: 401, headers: corsHeaders() }
+          );
+        }
+        await col.updateOne({ id: customer.id }, { $set: { password, updatedAt: new Date().toISOString() } });
       }
 
       return NextResponse.json(

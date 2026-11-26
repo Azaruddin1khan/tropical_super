@@ -432,6 +432,36 @@ export async function GET(
       );
     }
 
+    // Customer Favorites (GET)
+    if (path === 'customer/favorites') {
+      const email = (searchParams.get('email') || '').toLowerCase().trim();
+      const id = searchParams.get('id');
+
+      if (!email && !id) {
+        return NextResponse.json(
+          { success: true, favorites: [], data: [] },
+          { headers: corsHeaders() }
+        );
+      }
+
+      const col = db.collection('customers');
+      const emailRegex = email ? { $regex: new RegExp(`^${email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } : null;
+      const query = email && id
+        ? { $or: [{ email: emailRegex }, { id }] }
+        : email
+        ? { email: emailRegex }
+        : { id };
+
+      const customer: any = await col.findOne(query);
+      const rawFavs = customer?.favorites || customer?.favoriteIds || [];
+      const favorites = Array.isArray(rawFavs) ? rawFavs.map(String) : [];
+
+      return NextResponse.json(
+        { success: true, favorites, data: favorites },
+        { headers: corsHeaders() }
+      );
+    }
+
     // 10. Dashboard
     if (path === 'superadmin/dashboard' || path === 'admin/dashboard') {
       const ordersCol = db.collection('orders');
@@ -1073,6 +1103,46 @@ export async function POST(
             memberTier: 'Tropical Gold Member',
           },
         },
+        { headers: corsHeaders() }
+      );
+    }
+
+    // Customer Favorites (POST)
+    if (path === 'customer/favorites') {
+      const email = (body.email || searchParams.get('email') || '').toLowerCase().trim();
+      const id = body.id || body.customerId || searchParams.get('id');
+      const rawFavs = body.favorites || body.favoriteIds || [];
+      const favoriteIds = Array.isArray(rawFavs) ? rawFavs.map(String) : [];
+
+      if (!email && !id) {
+        return NextResponse.json(
+          { success: false, error: 'Customer email or ID is required' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      const col = db.collection('customers');
+      const emailRegex = email ? { $regex: new RegExp(`^${email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } : null;
+      const query = email && id
+        ? { $or: [{ email: emailRegex }, { id }] }
+        : email
+        ? { email: emailRegex }
+        : { id };
+
+      await col.updateOne(
+        query,
+        {
+          $set: {
+            favorites: favoriteIds,
+            favoriteIds: favoriteIds,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+        { upsert: false }
+      );
+
+      return NextResponse.json(
+        { success: true, favorites: favoriteIds, data: favoriteIds },
         { headers: corsHeaders() }
       );
     }

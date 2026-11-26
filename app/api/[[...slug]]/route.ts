@@ -357,6 +357,52 @@ export async function GET(
       );
     }
 
+    // Customer Profile Details
+    if (path === 'customer/profile') {
+      const email = (searchParams.get('email') || '').toLowerCase().trim();
+      const id = searchParams.get('id');
+
+      if (!email && !id) {
+        return NextResponse.json(
+          { success: false, error: 'Customer email or ID is required' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      const col = db.collection('customers');
+      let customer: any = null;
+      if (email && id) {
+        customer = await col.findOne({ $or: [{ email }, { id }] });
+      } else if (email) {
+        customer = await col.findOne({ email });
+      } else if (id) {
+        customer = await col.findOne({ id });
+      }
+
+      if (!customer) {
+        return NextResponse.json(
+          { success: false, error: 'Customer not found' },
+          { status: 404, headers: corsHeaders() }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          profile: {
+            id: customer.id,
+            fullName: customer.name,
+            email: customer.email,
+            phone: customer.phone,
+            avatarUrl: customer.avatarUrl,
+            memberTier: 'Tropical Gold Member',
+            status: customer.status || 'active',
+          },
+        },
+        { headers: corsHeaders() }
+      );
+    }
+
     // 10. Dashboard
     if (path === 'superadmin/dashboard' || path === 'admin/dashboard') {
       const ordersCol = db.collection('orders');
@@ -950,6 +996,53 @@ export async function POST(
         {
           success: true,
           message: 'Customer password reset successfully! You can now log in with your new password.',
+        },
+        { headers: corsHeaders() }
+      );
+    }
+
+    // Customer App: Update Profile & Avatar
+    if (path === 'customer/profile' || path === 'customer/auth/profile') {
+      const { id, email, fullName, name, phone, avatarUrl } = body || {};
+      const cleanEmail = (email || '').toLowerCase().trim();
+
+      if (!cleanEmail && !id) {
+        return NextResponse.json(
+          { success: false, error: 'Customer email or ID is required' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+
+      const col = db.collection('customers');
+      const updateData: any = {
+        updatedAt: new Date().toISOString(),
+      };
+      if (fullName || name) updateData.name = (fullName || name).trim();
+      if (phone) updateData.phone = phone.trim();
+      if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
+
+      const query: any = {
+        $or: [
+          ...(id ? [{ id }] : []),
+          ...(cleanEmail ? [{ email: { $regex: new RegExp(`^${cleanEmail}$`, 'i') } }] : []),
+        ],
+      };
+
+      await col.updateOne(query, { $set: updateData });
+      const updatedCustomer: any = await col.findOne(query);
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Profile updated successfully',
+          profile: {
+            id: updatedCustomer?.id || id,
+            fullName: updatedCustomer?.name || fullName,
+            email: updatedCustomer?.email || cleanEmail,
+            phone: updatedCustomer?.phone || phone,
+            avatarUrl: updatedCustomer?.avatarUrl || avatarUrl,
+            memberTier: 'Tropical Gold Member',
+          },
         },
         { headers: corsHeaders() }
       );

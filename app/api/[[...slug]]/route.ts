@@ -282,7 +282,7 @@ export async function GET(
     }
 
     // 9. Settings
-    if (path === 'superadmin/settings' || path === 'admin/settings') {
+    if (path === 'superadmin/settings' || path === 'admin/settings' || path === 'customer/settings') {
       const col = db.collection('settings');
       let settings = await col.findOne({ id: 'main_restaurant_settings' });
       if (!settings) {
@@ -1433,7 +1433,7 @@ export async function PUT(
     }
 
     // Update Settings
-    if (path === 'superadmin/settings' || path === 'admin/settings') {
+    if (path === 'superadmin/settings' || path === 'admin/settings' || path === 'customer/settings') {
       const col = db.collection('settings');
       const { _id, ...cleanData } = body;
       await col.updateOne({ id: 'main_restaurant_settings' }, { $set: cleanData }, { upsert: true });

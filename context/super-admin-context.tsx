@@ -341,7 +341,21 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
         if (ordersRes.success && Array.isArray(ordersRes.data)) {
           const ords = dedupeById<Order>(ordersRes.data);
           setOrders((prev) => {
-            if (ords.length !== prev.length || (ords.length > 0 && ords[0]?.id !== prev[0]?.id)) {
+            const hasChanged =
+              ords.length !== prev.length ||
+              (ords.length > 0 && ords[0]?.id !== prev[0]?.id) ||
+              ords.some((o, i) => {
+                const p = prev[i];
+                return (
+                  !p ||
+                  p.id !== o.id ||
+                  p.orderStatus !== o.orderStatus ||
+                  p.assignedDriverName !== o.assignedDriverName ||
+                  p.paymentStatus !== o.paymentStatus ||
+                  p.updatedAt !== o.updatedAt
+                );
+              });
+            if (hasChanged) {
               return ords;
             }
             return prev;

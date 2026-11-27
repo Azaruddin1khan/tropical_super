@@ -554,6 +554,7 @@ export async function POST(
 ) {
   const { slug = [] } = (await context.params) || {};
   const path = slug.join('/');
+  const { searchParams } = new URL(request.url);
 
   try {
     const db = await getDb();
@@ -659,8 +660,8 @@ export async function POST(
         status: 'processing',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        assignedDriverId: cleanBody.assignedDriverId || 'drv-01',
-        assignedDriverName: cleanBody.assignedDriverName || 'Leo Santos (Tropical Courier)',
+        assignedDriverId: cleanBody.assignedDriverId || null,
+        assignedDriverName: cleanBody.assignedDriverName || null,
         estimatedDeliveryTime: cleanBody.estimatedDeliveryTime || '25-35 mins',
         barcodeValue: cleanBody.barcodeValue || `${orderId}-BC`,
         qrCodeValue: cleanBody.qrCodeValue || `https://tropicalgyros.demo/order/${orderId}`,
@@ -1851,6 +1852,7 @@ export async function PUT(
 ) {
   const { slug = [] } = (await context.params) || {};
   const path = slug.join('/');
+  const { searchParams } = new URL(request.url);
 
   try {
     const db = await getDb();
@@ -1943,6 +1945,7 @@ export async function PATCH(
 ) {
   const { slug = [] } = (await context.params) || {};
   const path = slug.join('/');
+  const { searchParams } = new URL(request.url);
 
   try {
     const db = await getDb();

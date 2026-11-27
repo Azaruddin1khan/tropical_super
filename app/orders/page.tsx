@@ -313,21 +313,35 @@ export default function OrdersPage() {
                       {/* Driver */}
                       <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
                         {order.assignedDriverName ? (
-                          <div className="flex items-center gap-1.5 text-xs text-slate-700">
-                            <Bike className="w-3.5 h-3.5 text-sky-600" />
-                            <span className="font-medium">{order.assignedDriverName}</span>
+                          <div className="flex items-center gap-2 text-xs text-slate-700">
+                            <div className="flex items-center gap-1.5 font-medium text-slate-800">
+                              <Bike className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                              <span>{order.assignedDriverName}</span>
+                            </div>
+                            <button
+                              type="button"
+                              className="text-[11px] font-semibold text-sky-600 hover:text-sky-800 hover:underline px-1 py-0.5 rounded cursor-pointer transition-colors"
+                              title="Change or reassign courier"
+                              onClick={() => {
+                                setAssigningDriverOrderId(order.id);
+                                setSelectedDriverId(order.assignedDriverId || drivers[0]?.id || '');
+                              }}
+                            >
+                              Edit
+                            </button>
                           </div>
                         ) : (
-                          <button
-                            type="button"
-                            className="text-xs font-semibold text-sky-600 hover:text-sky-700 hover:underline cursor-pointer"
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-7.5 border-dashed border-sky-300 bg-sky-50/60 hover:bg-sky-100 text-sky-700 hover:text-sky-800 font-semibold px-2.5 transition-all shadow-2xs"
                             onClick={() => {
                               setAssigningDriverOrderId(order.id);
                               setSelectedDriverId(drivers[0]?.id || '');
                             }}
                           >
                             + Assign Driver
-                          </button>
+                          </Button>
                         )}
                       </td>
 

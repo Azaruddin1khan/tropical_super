@@ -334,19 +334,29 @@ export function InvoiceModal({
             <div className="py-5 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Left Column: Security & Terms */}
               <div className="space-y-3">
-                {/* Barcode Strip */}
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex flex-col items-center justify-center">
-                  <div className="flex items-center gap-[2.5px] h-8 mb-1" aria-hidden="true">
-                    {[2,1,3,1,2,4,1,3,2,1,4,1,2,3,1,4,2,1,3,2,4,1,2,3,1,4,2,1,3].map((w, idx) => (
-                      <div
-                        key={idx}
-                        className="bg-slate-800 h-full rounded-[0.5px]"
-                        style={{ width: `${w * 1.5}px` }}
+                {/* Kitchen Bag Pickup Barcode & QR Strip */}
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex flex-col items-center justify-center gap-2">
+                  <div className="flex items-center gap-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(orderId)}`}
+                      alt={`QR Code ${orderId}`}
+                      className="w-16 h-16 object-contain rounded border border-slate-200 bg-white p-1"
+                    />
+                    <div className="flex flex-col items-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`https://barcodeapi.org/api/128/${encodeURIComponent(orderId)}`}
+                        alt={`Barcode ${orderId}`}
+                        className="h-9 max-w-[150px] object-contain"
                       />
-                    ))}
+                      <span className="font-mono text-[10px] font-bold text-slate-700 tracking-wider mt-0.5">
+                        *{orderId}*
+                      </span>
+                    </div>
                   </div>
-                  <span className="font-mono text-[10px] font-bold text-slate-600 tracking-widest">
-                    *{orderId}*
+                  <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded border border-amber-200/80">
+                    Scan with Delivery Boy App to Pickup Bag
                   </span>
                 </div>
 

@@ -517,17 +517,33 @@ export default function OrdersPage() {
                   </p>
                 </div>
 
-                {/* Handover Barcode Pill */}
-                <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl flex items-center justify-between">
-                  <div>
+                {/* Kitchen Bag Pickup Barcode & QR Pass */}
+                <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl flex items-center justify-between gap-3">
+                  <div className="space-y-1">
                     <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
-                      Customer Handover Barcode
+                      Kitchen Bag Pickup Pass
                     </span>
-                    <span className="font-mono font-black text-slate-900 text-xs">
-                      {selectedOrder.barcodeId}
+                    <span className="font-mono font-black text-slate-900 text-xs block">
+                      {selectedOrder.barcodeId || selectedOrder.id}
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      Courier scans to confirm pickup
                     </span>
                   </div>
-                  <Barcode className="w-6 h-6 text-amber-600" />
+                  <div className="flex items-center gap-2 bg-white p-1.5 rounded-lg border border-amber-200/80">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(selectedOrder.id)}`}
+                      alt="QR"
+                      className="w-11 h-11 object-contain rounded"
+                    />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`https://barcodeapi.org/api/128/${encodeURIComponent(selectedOrder.id)}`}
+                      alt="Barcode"
+                      className="h-8 max-w-[100px] object-contain hidden sm:block"
+                    />
+                  </div>
                 </div>
               </div>
 

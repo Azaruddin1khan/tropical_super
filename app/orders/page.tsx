@@ -533,14 +533,14 @@ export default function OrdersPage() {
                   <div className="flex items-center gap-2 bg-white p-1.5 rounded-lg border border-amber-200/80">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(selectedOrder.id)}`}
-                      alt="QR"
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(`KB-${selectedOrder.id}`)}`}
+                      alt="Kitchen QR"
                       className="w-11 h-11 object-contain rounded"
                     />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={`https://barcodeapi.org/api/128/${encodeURIComponent(selectedOrder.id)}`}
-                      alt="Barcode"
+                      src={`https://barcodeapi.org/api/128/${encodeURIComponent(`KB-${selectedOrder.id}`)}`}
+                      alt="Kitchen Barcode"
                       className="h-8 max-w-[100px] object-contain hidden sm:block"
                     />
                   </div>

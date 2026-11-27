@@ -81,8 +81,10 @@ function normalizeForDeliveryBoy(o: any) {
     paymentMethod: o.paymentMethod || 'Cash on Delivery (COD)',
     isPaid: Boolean(o.isPaid || o.paymentStatus === 'paid'),
     status,
-    barcodeCode: o.barcodeValue || o.barcodeCode || `${o.id || o.orderId}-BC`,
-    qrCode: o.qrCodeValue || o.qrCode || `https://tropicalgyros.demo/order/${o.id || o.orderId}`,
+    barcodeCode: `KB-${o.id || o.orderId}`,
+    kitchenBagCode: `KB-${o.id || o.orderId}`,
+    customerDropCode: `DROP-${o.id || o.orderId}`,
+    qrCode: `https://tropicalgyros.demo/order/${o.id || o.orderId}/kitchen`,
     deliveryNotes: o.deliveryInstructions || o.deliveryNotes || '',
     orderType: o.fulfillmentType || o.orderType || 'delivery',
     deliveredAt: o.deliveredAt || null,
@@ -1537,7 +1539,11 @@ export async function POST(
         );
       }
       const col = db.collection('orders');
-      const cleanCode = code.replace(/https?:\/\/[^/]+\/order\//i, '').replace(/-BC$/i, '').trim();
+      const cleanCode = code
+        .replace(/https?:\/\/[^/]+\/order\//i, '')
+        .replace(/\/kitchen|\/drop/i, '')
+        .replace(/^KB-|^DROP-|-BC$/i, '')
+        .trim();
       const order = await col.findOne({
         $or: [
           { id: code },

@@ -339,24 +339,24 @@ export function InvoiceModal({
                   <div className="flex items-center gap-4">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(orderId)}`}
-                      alt={`QR Code ${orderId}`}
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(`KB-${orderId}`)}`}
+                      alt={`Kitchen QR ${orderId}`}
                       className="w-16 h-16 object-contain rounded border border-slate-200 bg-white p-1"
                     />
                     <div className="flex flex-col items-center">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={`https://barcodeapi.org/api/128/${encodeURIComponent(orderId)}`}
-                        alt={`Barcode ${orderId}`}
+                        src={`https://barcodeapi.org/api/128/${encodeURIComponent(`KB-${orderId}`)}`}
+                        alt={`Kitchen Barcode ${orderId}`}
                         className="h-9 max-w-[150px] object-contain"
                       />
                       <span className="font-mono text-[10px] font-bold text-slate-700 tracking-wider mt-0.5">
-                        *{orderId}*
+                        *KB-{orderId}*
                       </span>
                     </div>
                   </div>
                   <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded border border-amber-200/80">
-                    Scan with Delivery Boy App to Pickup Bag
+                    Kitchen Bag Pass • Scan with Delivery App to Pickup
                   </span>
                 </div>
 

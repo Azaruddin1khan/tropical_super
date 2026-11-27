@@ -244,8 +244,8 @@ export async function GET(
           assignedDriverId: o.assignedDriverId || null,
           assignedDriverName: o.assignedDriverName || null,
           estimatedDeliveryTime: o.estimatedDeliveryTime || '25-35 mins',
-          barcodeValue: o.barcodeValue || o.barcodeId || `${orderId}-BC`,
-          qrCodeValue: o.qrCodeValue || `https://tropicalgyros.demo/order/${orderId}`,
+          barcodeValue: o.barcodeValue || o.barcodeId || `DROP-${orderId}`,
+          qrCodeValue: o.qrCodeValue || `https://tropicalgyros.demo/order/${orderId}/drop`,
         };
       });
 
@@ -306,8 +306,8 @@ export async function GET(
           assignedDriverId: o.assignedDriverId || null,
           assignedDriverName: o.assignedDriverName || null,
           estimatedDeliveryTime: o.estimatedDeliveryTime || '25-35 mins',
-          barcodeValue: o.barcodeValue || o.barcodeId || `${orderId}-BC`,
-          qrCodeValue: o.qrCodeValue || `https://tropicalgyros.demo/order/${orderId}`,
+          barcodeValue: o.barcodeValue || o.barcodeId || `DROP-${orderId}`,
+          qrCodeValue: o.qrCodeValue || `https://tropicalgyros.demo/order/${orderId}/drop`,
         };
         return NextResponse.json({ success: true, data: normalized, order: normalized }, { headers: corsHeaders() });
       }
@@ -808,8 +808,8 @@ export async function POST(
         assignedDriverId: cleanBody.assignedDriverId || null,
         assignedDriverName: cleanBody.assignedDriverName || null,
         estimatedDeliveryTime: cleanBody.estimatedDeliveryTime || '25-35 mins',
-        barcodeValue: cleanBody.barcodeValue || `${orderId}-BC`,
-        qrCodeValue: cleanBody.qrCodeValue || `https://tropicalgyros.demo/order/${orderId}`,
+        barcodeValue: cleanBody.barcodeValue || `DROP-${orderId}`,
+        qrCodeValue: cleanBody.qrCodeValue || `https://tropicalgyros.demo/order/${orderId}/drop`,
       };
 
       await col.updateOne({ id: orderId }, { $set: newOrder }, { upsert: true });

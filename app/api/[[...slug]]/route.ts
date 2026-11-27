@@ -88,6 +88,8 @@ function normalizeForDeliveryBoy(o: any) {
     deliveryNotes: o.deliveryInstructions || o.deliveryNotes || '',
     orderType: o.fulfillmentType || o.orderType || 'delivery',
     deliveredAt: o.deliveredAt || null,
+    assignedDriverId: o.assignedDriverId || null,
+    assignedDriverName: o.assignedDriverName || null,
   };
 }
 
@@ -1532,6 +1534,7 @@ export async function POST(
     // Delivery Boy: Verify Code (Barcode / QR Code verification)
     if (path === 'delivery-boy/orders/verify-code') {
       const code = (body.code || '').trim();
+      const driverId = (body.driverId || '').trim();
       if (!code) {
         return NextResponse.json(
           { success: false, error: 'Code is required' },
@@ -1562,6 +1565,45 @@ export async function POST(
           { success: false, error: `No active order found for code "${code}"` },
           { status: 404, headers: corsHeaders() }
         );
+      }
+
+      // Check if order is unassigned
+      if (!order.assignedDriverId) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'UNASSIGNED',
+            error: 'Yeh order abhi kisi bhi delivery boy ko assign nahi hua hai! Kripya Admin se assign karwayein.',
+            orderId: order.id || order.orderId,
+          },
+          { status: 403, headers: corsHeaders() }
+        );
+      }
+
+      // Check if order is assigned to another driver
+      if (driverId && order.assignedDriverId) {
+        const dId = driverId.toString().trim().toLowerCase();
+        const oDriverId = (order.assignedDriverId || '').toString().trim().toLowerCase();
+        const oDriverName = (order.assignedDriverName || '').toString().trim().toLowerCase();
+
+        const isMatch =
+          oDriverId === dId ||
+          oDriverName.includes(dId) ||
+          dId.includes(oDriverName);
+
+        if (!isMatch) {
+          return NextResponse.json(
+            {
+              success: false,
+              code: 'ASSIGNED_TO_OTHER',
+              error: `Yeh order kisi aur courier (${order.assignedDriverName || 'another courier'}) ko assigned hai!`,
+              assignedDriverName: order.assignedDriverName,
+              assignedDriverId: order.assignedDriverId,
+              orderId: order.id || order.orderId,
+            },
+            { status: 403, headers: corsHeaders() }
+          );
+        }
       }
 
       return NextResponse.json(

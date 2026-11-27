@@ -38,6 +38,57 @@ function dedupeById(items: any[]): any[] {
   });
 }
 
+function normalizeForDeliveryBoy(o: any) {
+  let addressStr = '';
+  if (typeof o.deliveryAddress === 'string') {
+    addressStr = o.deliveryAddress;
+  } else if (o.deliveryAddress && typeof o.deliveryAddress === 'object') {
+    const { street = '', apartment = '', city = '', postalCode = '' } = o.deliveryAddress;
+    addressStr = [street, apartment, city, postalCode].filter(Boolean).join(', ');
+  }
+  if (!addressStr) addressStr = '14 Rosetta Street, Palmdale, Nassau';
+
+  let status = 'assigned';
+  const rawStatus = (o.orderStatus || o.status || '').toLowerCase();
+  if (rawStatus === 'out_for_delivery') {
+    status = 'out_for_delivery';
+  } else if (rawStatus === 'delivered' || rawStatus === 'completed') {
+    status = 'delivered';
+  } else if (rawStatus === 'picked_up' || rawStatus === 'pickedup') {
+    status = 'picked_up';
+  }
+
+  const items = Array.isArray(o.items)
+    ? o.items.map((it: any) => ({
+        name: it.productName || it.name || it.food?.name || 'Item',
+        quantity: Number(it.quantity) || 1,
+        unitPrice: Number(it.price || it.unitPrice || it.food?.price) || 0,
+        options: it.specialInstructions || it.options || '',
+      }))
+    : [];
+
+  return {
+    id: o.id || o.orderId || '',
+    customerName: o.customerName || o.deliveryAddress?.recipientName || 'Customer',
+    customerPhone: o.customerPhone || o.deliveryAddress?.phone || '+1 (242) 555-0100',
+    deliveryAddress: addressStr,
+    items,
+    orderTime: o.createdAt || o.orderTime || new Date().toISOString(),
+    subtotal: Number(o.subtotal) || 0,
+    deliveryFee: Number(o.deliveryFee) || 0,
+    tax: Number(o.tax) || 0,
+    totalAmount: Number(o.total || o.totalAmount) || 0,
+    paymentMethod: o.paymentMethod || 'Cash on Delivery (COD)',
+    isPaid: Boolean(o.isPaid || o.paymentStatus === 'paid'),
+    status,
+    barcodeCode: o.barcodeValue || o.barcodeCode || `${o.id || o.orderId}-BC`,
+    qrCode: o.qrCodeValue || o.qrCode || `https://tropicalgyros.demo/order/${o.id || o.orderId}`,
+    deliveryNotes: o.deliveryInstructions || o.deliveryNotes || '',
+    orderType: o.fulfillmentType || o.orderType || 'delivery',
+    deliveredAt: o.deliveredAt || null,
+  };
+}
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ slug?: string[] }> }
@@ -532,6 +583,96 @@ export async function GET(
             pendingCount: allOrders.filter((o: any) => o.paymentStatus !== 'paid' && !o.isPaid).length,
           },
         },
+        { headers: corsHeaders() }
+      );
+    }
+
+    // Delivery Boy Orders: Assigned (GET)
+    if (path === 'delivery-boy/orders/assigned') {
+      const driverId = (searchParams.get('driverId') || '').trim();
+      const col = db.collection('orders');
+
+      let matchQuery: any = { assignedDriverId: driverId };
+      if (driverId) {
+        try {
+          const driversCol = db.collection('drivers');
+          const driverDoc = await driversCol.findOne({
+            $or: [
+              { id: driverId },
+              { email: driverId.toLowerCase() },
+              { name: new RegExp(driverId, 'i') },
+            ],
+          });
+          if (driverDoc) {
+            const matchIds = [driverDoc.id, driverId].filter(Boolean);
+            const nameRegex = new RegExp(`^${driverDoc.name}\\b|${driverDoc.name}`, 'i');
+            matchQuery = {
+              $or: [
+                { assignedDriverId: { $in: matchIds } },
+                { assignedDriverName: nameRegex },
+              ],
+            };
+          }
+        } catch (_) {}
+      }
+
+      const activeQuery = {
+        ...matchQuery,
+        orderStatus: { $nin: ['delivered', 'cancelled', 'completed'] },
+        status: { $nin: ['delivered', 'cancelled', 'completed'] },
+      };
+
+      const orders = await col.find(activeQuery).sort({ createdAt: -1 }).toArray();
+      const normalized = (orders || []).map(normalizeForDeliveryBoy);
+
+      return NextResponse.json(
+        { success: true, count: normalized.length, data: normalized },
+        { headers: corsHeaders() }
+      );
+    }
+
+    // Delivery Boy Orders: Delivery History (GET)
+    if (path === 'delivery-boy/orders/history') {
+      const driverId = (searchParams.get('driverId') || '').trim();
+      const col = db.collection('orders');
+
+      let matchQuery: any = { assignedDriverId: driverId };
+      if (driverId) {
+        try {
+          const driversCol = db.collection('drivers');
+          const driverDoc = await driversCol.findOne({
+            $or: [
+              { id: driverId },
+              { email: driverId.toLowerCase() },
+              { name: new RegExp(driverId, 'i') },
+            ],
+          });
+          if (driverDoc) {
+            const matchIds = [driverDoc.id, driverId].filter(Boolean);
+            const nameRegex = new RegExp(`^${driverDoc.name}\\b|${driverDoc.name}`, 'i');
+            matchQuery = {
+              $or: [
+                { assignedDriverId: { $in: matchIds } },
+                { assignedDriverName: nameRegex },
+              ],
+            };
+          }
+        } catch (_) {}
+      }
+
+      const historyQuery = {
+        ...matchQuery,
+        $or: [
+          { orderStatus: { $in: ['delivered', 'completed'] } },
+          { status: { $in: ['delivered', 'completed'] } },
+        ],
+      };
+
+      const orders = await col.find(historyQuery).sort({ deliveredAt: -1, updatedAt: -1 }).limit(100).toArray();
+      const normalized = (orders || []).map(normalizeForDeliveryBoy);
+
+      return NextResponse.json(
+        { success: true, count: normalized.length, data: normalized },
         { headers: corsHeaders() }
       );
     }
@@ -1386,6 +1527,90 @@ export async function POST(
       );
     }
 
+    // Delivery Boy: Verify Code (Barcode / QR Code verification)
+    if (path === 'delivery-boy/orders/verify-code') {
+      const code = (body.code || '').trim();
+      if (!code) {
+        return NextResponse.json(
+          { success: false, error: 'Code is required' },
+          { status: 400, headers: corsHeaders() }
+        );
+      }
+      const col = db.collection('orders');
+      const cleanCode = code.replace(/https?:\/\/[^/]+\/order\//i, '').replace(/-BC$/i, '').trim();
+      const order = await col.findOne({
+        $or: [
+          { id: code },
+          { id: cleanCode },
+          { orderId: code },
+          { orderId: cleanCode },
+          { barcodeValue: code },
+          { barcodeValue: { $regex: new RegExp(cleanCode, 'i') } },
+          { qrCodeValue: code },
+          { qrCodeValue: { $regex: new RegExp(cleanCode, 'i') } },
+        ],
+      });
+
+      if (!order) {
+        return NextResponse.json(
+          { success: false, error: `No active order found for code "${code}"` },
+          { status: 404, headers: corsHeaders() }
+        );
+      }
+
+      return NextResponse.json(
+        { success: true, order: normalizeForDeliveryBoy(order) },
+        { headers: corsHeaders() }
+      );
+    }
+
+    // Delivery Boy: Mark Cash Collected
+    if (
+      slug &&
+      slug[0] === 'delivery-boy' &&
+      slug[1] === 'orders' &&
+      slug[2] &&
+      slug[3] === 'cash-collected'
+    ) {
+      const id = slug[2];
+      const amount = Number(body.amount) || 0;
+      const col = db.collection('orders');
+      await col.updateOne(
+        { $or: [{ id }, { orderId: id }] },
+        {
+          $set: {
+            isPaid: true,
+            paymentStatus: 'paid',
+            cashCollected: amount,
+            cashCollectedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        }
+      );
+      return NextResponse.json({ success: true, isPaid: true }, { headers: corsHeaders() });
+    }
+
+    // Delivery Boy: Live GPS Location Ping
+    if (path === 'delivery-boy/location') {
+      const { driverId, latitude, longitude, speedKmh, headingDeg } = body || {};
+      if (driverId && latitude && longitude) {
+        const driversCol = db.collection('drivers');
+        await driversCol.updateOne(
+          { $or: [{ id: driverId }, { email: driverId.toLowerCase() }] },
+          {
+            $set: {
+              latitude: Number(latitude),
+              longitude: Number(longitude),
+              speedKmh: Number(speedKmh) || 0,
+              headingDeg: Number(headingDeg) || 0,
+              lastLocationUpdate: new Date().toISOString(),
+            },
+          }
+        );
+      }
+      return NextResponse.json({ success: true }, { headers: corsHeaders() });
+    }
+
     // Admins & Staff Creation
     if (path === 'superadmin/admins' || path === 'admin/admins' || path === 'admin/staff') {
       const col = db.collection('admins');
@@ -2073,6 +2298,53 @@ export async function PATCH(
       await col.updateOne({ id }, { $set: { paymentStatus: 'Paid (Cash Collected)', updatedAt: new Date().toISOString() } });
       return NextResponse.json({ success: true, id }, { headers: corsHeaders() });
     }
+
+    // Delivery Boy: Update Order Status
+    if (
+      slug &&
+      slug[0] === 'delivery-boy' &&
+      slug[1] === 'orders' &&
+      slug[2] &&
+      slug[3] === 'status'
+    ) {
+      const id = slug[2];
+      const newStatus = (body.status || '').toLowerCase().trim();
+      const col = db.collection('orders');
+
+      const updateFields: any = {
+        orderStatus: newStatus,
+        status: newStatus,
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (newStatus === 'delivered' || newStatus === 'completed') {
+        updateFields.deliveredAt = new Date().toISOString();
+      }
+
+      await col.updateOne(
+        { $or: [{ id }, { orderId: id }] },
+        { $set: updateFields }
+      );
+
+      return NextResponse.json(
+        { success: true, orderId: id, status: newStatus },
+        { headers: corsHeaders() }
+      );
+    }
+
+    // Delivery Boy: Status Update (online / available / offline)
+    if (path === 'delivery-boy/status') {
+      const { driverId, status } = body || {};
+      if (driverId && status) {
+        const driversCol = db.collection('drivers');
+        await driversCol.updateOne(
+          { $or: [{ id: driverId }, { email: driverId.toLowerCase() }] },
+          { $set: { status, updatedAt: new Date().toISOString() } }
+        );
+      }
+      return NextResponse.json({ success: true }, { headers: corsHeaders() });
+    }
+
 
     return NextResponse.json(
       { success: false, error: `Route not found: ${path}` },

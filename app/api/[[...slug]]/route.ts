@@ -1573,7 +1573,7 @@ export async function POST(
           {
             success: false,
             code: 'UNASSIGNED',
-            error: 'Yeh order abhi kisi bhi delivery boy ko assign nahi hua hai! Kripya Admin se assign karwayein.',
+            error: 'This order is not assigned to any courier yet! Please assign it in the Admin portal first.',
             orderId: order.id || order.orderId,
           },
           { status: 403, headers: corsHeaders() }
@@ -1596,7 +1596,7 @@ export async function POST(
             {
               success: false,
               code: 'ASSIGNED_TO_OTHER',
-              error: `Yeh order kisi aur courier (${order.assignedDriverName || 'another courier'}) ko assigned hai!`,
+              error: `This order is assigned to another courier (${order.assignedDriverName || 'another courier'})!`,
               assignedDriverName: order.assignedDriverName,
               assignedDriverId: order.assignedDriverId,
               orderId: order.id || order.orderId,
